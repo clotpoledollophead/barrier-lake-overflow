@@ -1,0 +1,262 @@
+/* ════════════════════════════════════════
+   堰塞湖監測儀表板 · 樣式
+   色系：山林夜色（松墨底 / 苔綠 / 玉青水體 / 琥珀·陶紅警戒）
+   ════════════════════════════════════════ */
+
+:root{
+  --abyss:#0F1613;
+  --stone:#17201C;
+  --raised:#1E2A24;
+  --line:rgba(202,216,206,.13);
+  --line-strong:rgba(202,216,206,.26);
+  --moss:#7CA48A;
+  --fog:#BCCDC2;
+  --snow:#E9F1EB;
+  --jade:#3FA9A0;
+  --jade-dim:#1E5F5C;
+  --ochre:#C98A2E;
+  --clay:#C2503C;
+
+  --wide:'Archivo',system-ui,sans-serif;
+  --sans:'Noto Sans TC',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--abyss);color:var(--fog);
+  font-family:var(--sans);font-size:15px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.wrap{max-width:1560px;margin:0 auto;padding:0 clamp(16px,3vw,44px)}
+
+/* ── 共用元件 ── */
+.num{
+  font-family:var(--wide);
+  font-variation-settings:'wdth' 118,'wght' 700;
+  font-feature-settings:'tnum';
+  color:var(--snow);line-height:1;
+}
+.label{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--moss);text-transform:uppercase;display:block;
+}
+.unit{font-family:var(--mono);font-size:12px;color:var(--moss);margin-left:6px}
+.sub{font-size:12.5px;color:var(--moss);margin-top:5px}
+.fineprint{margin-top:18px;font-size:13px;color:var(--moss);max-width:54ch}
+
+/* ── 狀態列 ── */
+.statusbar{
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(63,169,160,.05),transparent);
+  position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);
+}
+.statusbar .wrap{
+  display:flex;align-items:center;gap:clamp(14px,2.6vw,34px);
+  flex-wrap:wrap;padding-top:12px;padding-bottom:12px;
+}
+.sysname{
+  font-family:var(--wide);font-variation-settings:'wdth' 112,'wght' 700;
+  font-size:15px;color:var(--snow);display:flex;align-items:center;gap:10px;
+  white-space:nowrap;
+}
+.pulse{
+  width:8px;height:8px;border-radius:50%;background:var(--jade);
+  box-shadow:0 0 0 0 rgba(63,169,160,.6);animation:pulse 2.4s infinite;
+}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(63,169,160,0)}100%{box-shadow:0 0 0 0 rgba(63,169,160,0)}}
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat b{font-family:var(--mono);font-size:13px;color:var(--fog);font-weight:500}
+.statusbar .spacer{flex:1}
+
+/* ── 主版面 ── */
+.board{
+  display:grid;grid-template-columns:minmax(300px,430px) 1fr;
+  gap:1px;background:var(--line);border:1px solid var(--line);
+  margin-top:clamp(24px,3.6vw,44px);
+}
+.panel{background:var(--stone);min-width:0}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:16px clamp(14px,1.8vw,22px);border-bottom:1px solid var(--line);
+}
+.panel-head h2{
+  font-family:var(--wide);font-variation-settings:'wdth' 105,'wght' 600;
+  font-size:15px;color:var(--snow);
+}
+
+/* 篩選 */
+.filters{display:flex;gap:1px;background:var(--line);border:1px solid var(--line)}
+.filter{
+  background:var(--stone);padding:4px 12px;
+  font-family:var(--mono);font-size:11.5px;color:var(--moss);
+  transition:background .16s ease,color .16s ease;
+}
+.filter:hover{background:var(--raised);color:var(--fog)}
+.filter.is-on{background:var(--raised);color:var(--snow)}
+.filter:focus-visible{outline:1px solid var(--jade);outline-offset:-1px}
+
+/* ── 地圖 ── */
+.map-stage{padding:clamp(10px,1.6vw,20px)}
+#map{width:100%;height:auto;display:block;max-height:74vh}
+.coast{fill:#18211C;stroke:rgba(124,164,138,.55);stroke-width:1.4}
+.ridge{fill:rgba(124,164,138,.09);stroke:none}
+.marker{cursor:pointer}
+.marker circle.halo{fill:none;stroke-width:1.2;opacity:.45}
+.marker circle.dot{stroke:#0F1613;stroke-width:1.4}
+.marker.g-A circle.dot{fill:var(--clay)} .marker.g-A circle.halo{stroke:var(--clay)}
+.marker.g-B circle.dot{fill:var(--ochre)} .marker.g-B circle.halo{stroke:var(--ochre)}
+.marker.g-C circle.dot{fill:var(--moss);opacity:.75} .marker.g-C circle.halo{stroke:var(--moss)}
+.marker text{
+  font-family:var(--mono);font-size:11px;fill:var(--fog);
+  opacity:0;transition:opacity .18s ease;
+}
+.marker:hover text,.marker.is-active text{opacity:1}
+.marker.is-active circle.halo{opacity:1;stroke-width:2}
+.marker:focus-visible{outline:none}
+.marker:focus-visible circle.halo{opacity:1;stroke-width:2}
+.marker.is-dim{opacity:.16;pointer-events:none}
+.map-note{font-family:var(--mono);font-size:11px;color:var(--moss);margin-top:10px;text-align:center}
+
+/* ── 詳情 ── */
+.detail-panel{display:flex;flex-direction:column}
+.detail-head{
+  display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  padding:clamp(18px,2.4vw,28px) clamp(16px,2.2vw,28px) 18px;
+}
+.grade{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  border:1px solid var(--line-strong);color:var(--moss);
+  padding:3px 10px;align-self:center;white-space:nowrap;
+}
+.grade.g-A{border-color:var(--clay);color:var(--clay)}
+.grade.g-B{border-color:var(--ochre);color:var(--ochre)}
+.detail-head h1{
+  font-family:var(--wide);font-variation-settings:'wdth' 108,'wght' 700;
+  font-size:clamp(24px,3.4vw,40px);color:var(--snow);line-height:1.1;
+  letter-spacing:-.01em;
+}
+.where{font-family:var(--mono);font-size:12px;color:var(--moss);padding-bottom:5px}
+
+/* 剖面 */
+.section-figure{width:100%;height:auto;display:block}
+.terrain-fill{fill:#141C18}
+.contours line{stroke:#7CA48A;stroke-opacity:.14;stroke-width:1}
+.terrain-line{fill:none;stroke:#7CA48A;stroke-opacity:.55;stroke-width:1.5}
+#waterBody{fill:url(#waterGrad)}
+#waterLine{stroke:var(--jade);stroke-width:2}
+.crest-line{stroke:var(--clay);stroke-width:1.4;stroke-dasharray:7 6}
+.axis-label{font-family:var(--mono);font-size:12px}
+.axis-label.crest{fill:var(--clay)}
+.axis-label.water{fill:var(--jade)}
+.caliper line{stroke:var(--snow);stroke-opacity:.6;stroke-width:1}
+.gap-value{
+  font-family:var(--wide);font-size:16px;font-weight:700;fill:var(--snow);
+  font-variation-settings:'wdth' 115;
+}
+
+/* 讀數 */
+.readout{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.readout .cell{padding:18px clamp(14px,2vw,24px);border-right:1px solid var(--line)}
+.readout .cell:last-child{border-right:none}
+.readout .num{font-size:clamp(24px,2.8vw,36px)}
+
+/* 影響 */
+.impact{border-top:1px solid var(--line);padding:clamp(18px,2.2vw,26px);flex:1}
+.exposure{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:10px}
+.exposure .num{font-size:clamp(22px,2.6vw,32px)}
+
+/* ── 區段 ── */
+.sec{margin-top:clamp(32px,4.6vw,60px)}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.sec-head h2{
+  font-family:var(--wide);font-variation-settings:'wdth' 105,'wght' 600;
+  font-size:17px;color:var(--snow);white-space:nowrap;
+}
+.sec-head .rule{flex:1;height:1px;background:var(--line)}
+.sec-head .count{font-family:var(--mono);font-size:11.5px;color:var(--moss)}
+
+/* ── 清單 ── */
+.lakes{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.lake{
+  background:var(--stone);padding:18px clamp(16px,2vw,26px);width:100%;
+  display:grid;grid-template-columns:auto 1fr repeat(3,minmax(84px,auto));
+  gap:clamp(14px,2.2vw,30px);align-items:center;text-align:left;
+  transition:background .18s ease;
+}
+.lake:hover{background:var(--raised)}
+.lake:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--jade)}
+.lake.is-active{background:var(--raised);box-shadow:inset 3px 0 0 var(--jade)}
+.tier{
+  width:34px;height:34px;display:grid;place-items:center;
+  font-family:var(--wide);font-variation-settings:'wdth' 100,'wght' 700;
+  font-size:14px;border:1.5px solid var(--line-strong);color:var(--moss);
+}
+.tier.g-A{color:var(--clay);border-color:var(--clay)}
+.tier.g-B{color:var(--ochre);border-color:var(--ochre)}
+.lake .name{font-weight:700;color:var(--snow);font-size:15.5px}
+.lake .meta{font-family:var(--mono);font-size:11.5px;color:var(--moss);margin-top:2px}
+.lake .kv .num{font-size:19px}
+.lake .kv .label{margin-bottom:5px}
+.bar{height:3px;background:var(--line);position:relative;margin-top:8px;min-width:70px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--jade-dim)}
+.bar i.g-A{background:var(--clay)}
+.bar i.g-B{background:var(--ochre)}
+
+/* ── 示警紀錄 ── */
+.log{border:1px solid var(--line);background:var(--stone)}
+.log-row{
+  display:grid;grid-template-columns:132px 76px 1fr;gap:16px;
+  padding:13px clamp(14px,2vw,22px);border-bottom:1px solid var(--line);
+  align-items:baseline;font-size:14px;
+}
+.log-row:last-child{border-bottom:none}
+.log-row time{font-family:var(--mono);font-size:12px;color:var(--moss)}
+.tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  padding:2px 8px;border:1px solid var(--line-strong);color:var(--moss);
+  justify-self:start;
+}
+.tag.cap{color:var(--jade);border-color:var(--jade-dim)}
+.tag.up{color:var(--clay);border-color:var(--clay)}
+
+/* 空狀態 */
+.empty{
+  padding:30px;text-align:center;color:var(--moss);font-size:14px;
+  border:1px dashed var(--line-strong);background:var(--stone);
+}
+.empty b{display:block;color:var(--fog);font-weight:500;margin-bottom:4px}
+
+footer{margin-top:clamp(40px,6vw,80px);border-top:1px solid var(--line)}
+footer .wrap{
+  padding-top:20px;padding-bottom:36px;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  font-family:var(--mono);font-size:11.5px;color:var(--moss);
+}
+
+/* ── 動畫 ── */
+#waterGroup{transition:transform .8s cubic-bezier(.22,.7,.3,1)}
+.marker circle.dot{transition:r .3s ease}
+
+/* ── 響應式 ── */
+@media (max-width:1100px){
+  .board{grid-template-columns:1fr}
+  #map{max-height:56vh}
+}
+@media (max-width:860px){
+  .lake{grid-template-columns:auto 1fr;row-gap:16px}
+  .lake .kv:nth-of-type(1){grid-column:1/-1}
+  .exposure{grid-template-columns:1fr;gap:16px}
+}
+@media (max-width:720px){
+  .readout{grid-template-columns:1fr}
+  .readout .cell{border-right:none;border-bottom:1px solid var(--line)}
+  .readout .cell:last-child{border-bottom:none}
+}
+@media (max-width:640px){
+  .log-row{grid-template-columns:1fr;gap:5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
