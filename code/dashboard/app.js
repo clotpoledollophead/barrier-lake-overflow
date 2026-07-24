@@ -1,108 +1,28 @@
 /* ════════════════════════════════════════
-   堰塞湖監測儀表板 · 邏輯
-   資料為示範值，替換 LAKES 即可接上真實管線輸出
+   全台堰塞湖清冊 · 邏輯
+   資料由 data/lakes.js 提供（window.BARRIER_LAKES）
+   來源：農村水保署堰塞湖清冊，座標已轉為 WGS84
    ════════════════════════════════════════ */
 
 'use strict';
 
-/* ── 1. 資料 ───────────────────────────── */
+const LAKES = (window.BARRIER_LAKES || []).slice();
 
-const LAKES = [
-  {
-    id: 'mataian',
-    name: '馬太鞍溪堰塞湖',
-    where: '花蓮縣光復鄉',
-    lon: 121.3945, lat: 23.6812,
-    grade: 'A',
-    confirm: 'SAR + 光學雙重確認',
-    volume: 1075, volumeRange: '910–1,240',
-    floorEl: 640.0, crestEl: 682.0, waterEl: 675.6,
-    rise: 1.8, fillHours: 38,
-    people: 2847, roads: 4, isolated: 2,
-    shelter: '光復國中（淹沒範圍外 1.4 km）'
-  },
-  {
-    id: 'zhuoshui',
-    name: '濁水溪上游堰塞湖',
-    where: '南投縣仁愛鄉',
-    lon: 121.0500, lat: 23.8500,
-    grade: 'A',
-    confirm: 'SAR + 光學雙重確認',
-    volume: 684, volumeRange: '590–790',
-    floorEl: 1180.0, crestEl: 1216.0, waterEl: 1202.4,
-    rise: 2.4, fillHours: 61,
-    people: 1132, roads: 3, isolated: 1,
-    shelter: '親愛國小（淹沒範圍外 2.1 km）'
-  },
-  {
-    id: 'liwu',
-    name: '立霧溪上游堰塞湖',
-    where: '花蓮縣秀林鄉',
-    lon: 121.4500, lat: 24.1800,
-    grade: 'B',
-    confirm: '僅 SAR，多時相確認',
-    volume: 458, volumeRange: '390–530',
-    floorEl: 892.0, crestEl: 934.0, waterEl: 906.5,
-    rise: 0.9, fillHours: 142,
-    people: 640, roads: 2, isolated: 1,
-    shelter: '富世國小（淹沒範圍外 3.6 km）'
-  },
-  {
-    id: 'laonong',
-    name: '荖濃溪支流堰塞湖',
-    where: '高雄市桃源區',
-    lon: 120.7900, lat: 23.1800,
-    grade: 'B',
-    confirm: '僅 SAR，多時相確認',
-    volume: 312, volumeRange: '265–360',
-    floorEl: 764.0, crestEl: 812.0, waterEl: 792.8,
-    rise: 0.6, fillHours: 196,
-    people: 486, roads: 2, isolated: 0,
-    shelter: '桃源國中（淹沒範圍外 4.2 km）'
-  },
-  {
-    id: 'dajia',
-    name: '大甲溪上游待觀察水體',
-    where: '臺中市和平區',
-    lon: 121.2000, lat: 24.2500,
-    grade: 'C',
-    confirm: '單景偵測，待下次過境確認',
-    volume: null, volumeRange: '—',
-    floorEl: null, crestEl: null, waterEl: null,
-    rise: null, fillHours: null,
-    people: null, roads: null, isolated: null,
-    shelter: null
-  },
-  {
-    id: 'beinan',
-    name: '卑南溪支流待觀察水體',
-    where: '臺東縣延平鄉',
-    lon: 121.0200, lat: 22.9500,
-    grade: 'C',
-    confirm: '單景偵測，待下次過境確認',
-    volume: null, volumeRange: '—',
-    floorEl: null, crestEl: null, waterEl: null,
-    rise: null, fillHours: null,
-    people: null, roads: null, isolated: null,
-    shelter: null
-  }
-];
+const STATUS_TEXT = { watch: '監測中', stable: '存在已穩定', gone: '已消失' };
+const CAUSE_TEXT  = { quake: '地震', typhoon: '颱風', rain: '降雨', slide: '崩塌', other: '未記載' };
 
-const ALERTS = [
-  { time: '07/23 07:05', tag: '升級', cls: 'up',
-    text: '馬太鞍溪由 B 級升為 A 級：光學影像確認水體範圍，距壩頂縮短至 6.4 m' },
-  { time: '07/23 06:40', tag: 'CAP', cls: 'cap',
-    text: '已發布示警至災害示警平台，涵蓋光復鄉 3 村里' },
-  { time: '07/22 22:18', tag: '升級', cls: 'up',
-    text: '濁水溪上游水位 24 小時內上升 2.4 m，維持 A 級並加密監測' },
-  { time: '07/22 18:12', tag: '新增', cls: '',
-    text: '大甲溪上游偵測到新增水體，列為 C 級待觀察' },
-  { time: '07/21 06:08', tag: '更新', cls: '',
-    text: '荖濃溪支流蓄水量更新為 312 萬 m³，維持 B 級' }
-];
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+const state = {
+  selected: null,
+  status: 'all',
+  cause: 'all',
+  year: null
+};
 
 
-/* ── 2. 投影：經緯度 → 地圖座標 ─────────── */
+/* ── 1. 投影：經緯度 → 地圖座標 ─────────── */
 
 const BOUNDS = { west: 119.95, east: 122.05, south: 21.85, north: 25.35 };
 const MAP = { w: 460, h: 780 };
@@ -114,7 +34,6 @@ function project(lon, lat) {
   };
 }
 
-/* 海岸線與中央山脈（簡化輪廓，順時針自北端起） */
 const COASTLINE = [
   [121.53,25.30],[121.86,25.13],[121.83,24.72],[121.66,24.40],[121.61,23.98],
   [121.50,23.50],[121.38,23.10],[121.15,22.75],[120.86,22.20],[120.85,21.90],
@@ -130,83 +49,61 @@ const RIDGE = [
 ];
 
 function toPath(coords) {
-  return coords
-    .map(([lon, lat], i) => {
-      const p = project(lon, lat);
-      return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-    })
-    .join(' ') + ' Z';
+  return coords.map(([lon, lat], i) => {
+    const p = project(lon, lat);
+    return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+  }).join(' ') + ' Z';
 }
 
 
-/* ── 3. 剖面圖幾何 ─────────────────────── */
+/* ── 2. 篩選 ───────────────────────────── */
 
-/* 剖面 SVG 中的固定地形節點（見 index.html） */
-const SEC = {
-  leftTop:  { x: 0,   y: 60  },
-  basinL:   { x: 250, y: 235 },
-  basinR:   { x: 470, y: 228 },
-  crest:    { x: 575, y: 95  },
-  floorY: 235,
-  crestY: 95
-};
-
-/* 依水位比例回傳水面 y 座標 */
-function waterY(ratio) {
-  const r = Math.max(0, Math.min(1, ratio));
-  return SEC.floorY - r * (SEC.floorY - SEC.crestY);
+function matches(lake) {
+  if (state.status !== 'all' && lake.statusKey !== state.status) return false;
+  if (state.cause  !== 'all' && lake.causeKey  !== state.cause)  return false;
+  if (state.year   !== null  && lake.year      !== state.year)   return false;
+  return true;
 }
 
-/* 水面 y → 左岸交點 x（沿左側坡面） */
-function leftBankX(wy) {
-  const { leftTop, basinL } = SEC;
-  const t = (wy - leftTop.y) / (basinL.y - leftTop.y);
-  return leftTop.x + t * (basinL.x - leftTop.x);
-}
-
-/* 水面 y → 壩體上游面交點 x */
-function damFaceX(wy) {
-  const { basinR, crest } = SEC;
-  const t = (basinR.y - wy) / (basinR.y - crest.y);
-  return basinR.x + t * (crest.x - basinR.x);
+function visibleLakes() {
+  return LAKES.filter(matches);
 }
 
 
-/* ── 4. 渲染 ───────────────────────────── */
+/* ── 3. 地圖 ───────────────────────────── */
 
-const $  = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const MAX_VOL = Math.max(...LAKES.map(l => l.volume || 0)) || 1;
 
-const state = { selected: LAKES[0].id, filter: 'all' };
+/* 蓄水量差距達四個數量級，用平方根壓縮才不會讓小型湖消失 */
+function radius(vol) {
+  if (!vol) return 3.2;
+  return 3.2 + Math.sqrt(vol / MAX_VOL) * 15;
+}
 
-/* 底圖 */
 function renderBase() {
-  const g = $('#mapBase');
-  g.innerHTML = `
-    <path class="coast" d="${toPath(COASTLINE)}"/>
-    <path class="ridge" d="${toPath(RIDGE)}"/>
-  `;
+  $('#mapBase').innerHTML =
+    `<path class="coast" d="${toPath(COASTLINE)}"/>` +
+    `<path class="ridge" d="${toPath(RIDGE)}"/>`;
 }
 
-/* 標記 */
 function renderMarkers() {
-  const g = $('#mapMarkers');
-  const maxVol = Math.max(...LAKES.map(l => l.volume || 0));
+  /* 大的畫在下層，小的畫在上層，避免被蓋住 */
+  const ordered = LAKES.slice().sort((a, b) => (b.volume || 0) - (a.volume || 0));
 
-  g.innerHTML = LAKES.map(lake => {
+  $('#mapMarkers').innerHTML = ordered.map(lake => {
     const p = project(lake.lon, lake.lat);
-    const r = lake.volume ? 5 + (lake.volume / maxVol) * 8 : 4;
+    const r = radius(lake.volume);
     return `
-      <g class="marker g-${lake.grade}" data-id="${lake.id}"
+      <g class="marker s-${lake.statusKey}" data-id="${lake.id}"
          tabindex="0" role="button"
-         aria-label="${lake.name}，${lake.grade} 級">
-        <circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(r + 7).toFixed(1)}"/>
+         aria-label="${lake.name}，${lake.year} 年，${STATUS_TEXT[lake.statusKey]}">
+        <circle class="halo" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(r + 6).toFixed(1)}"/>
         <circle class="dot"  cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}"/>
-        <text x="${(p.x + r + 12).toFixed(1)}" y="${(p.y + 4).toFixed(1)}">${lake.name}</text>
+        <text x="${(p.x + r + 8).toFixed(1)}" y="${(p.y + 4).toFixed(1)}">${lake.name}</text>
       </g>`;
   }).join('');
 
-  $$('.marker', g).forEach(el => {
+  $$('#mapMarkers .marker').forEach(el => {
     const pick = () => select(el.dataset.id);
     el.addEventListener('click', pick);
     el.addEventListener('keydown', e => {
@@ -215,179 +112,272 @@ function renderMarkers() {
   });
 }
 
-/* 清單 */
+function syncMarkers() {
+  const visible = new Set(visibleLakes().map(l => l.id));
+  $$('#mapMarkers .marker').forEach(m => {
+    m.classList.toggle('is-dim', !visible.has(m.dataset.id));
+    m.classList.toggle('is-active', m.dataset.id === state.selected);
+  });
+  $('[data-bind="mapCount"]').textContent = `顯示 ${visible.size} / ${LAKES.length} 處`;
+}
+
+
+/* ── 4. 年度分布 ───────────────────────── */
+
+const TL = { w: 1200, h: 260, padL: 40, padR: 20, padT: 30, padB: 46 };
+
+function buildTimeline() {
+  const years = LAKES.map(l => l.year).filter(Boolean);
+  const y0 = Math.min(...years), y1 = Math.max(...years);
+  const span = y1 - y0 + 1;
+
+  const buckets = {};
+  for (let y = y0; y <= y1; y++) buckets[y] = { watch: 0, stable: 0, gone: 0, events: {} };
+  LAKES.forEach(l => {
+    if (!l.year) return;
+    buckets[l.year][l.statusKey]++;
+    if (l.event) buckets[l.year].events[l.event] = (buckets[l.year].events[l.event] || 0) + 1;
+  });
+
+  const counts = Object.values(buckets).map(b => b.watch + b.stable + b.gone);
+  const maxCount = Math.max(...counts);
+
+  const plotW = TL.w - TL.padL - TL.padR;
+  const plotH = TL.h - TL.padT - TL.padB;
+  const slot = plotW / span;
+  const barW = Math.max(6, slot * 0.62);
+  const baseY = TL.padT + plotH;
+
+  const xOf = y => TL.padL + (y - y0) * slot + (slot - barW) / 2;
+  const hOf = n => (n / maxCount) * plotH;
+
+  /* 標註最高的兩年 */
+  const peaks = Object.entries(buckets)
+    .map(([y, b]) => ({ year: +y, n: b.watch + b.stable + b.gone, b }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 2)
+    .filter(p => p.n >= 4);
+
+  let svg = `<line class="tl-axis" x1="${TL.padL - 6}" y1="${baseY}" x2="${TL.w - TL.padR}" y2="${baseY}"/>`;
+
+  for (let y = y0; y <= y1; y++) {
+    const b = buckets[y];
+    const n = b.watch + b.stable + b.gone;
+    const x = xOf(y);
+    let cursor = baseY;
+    let segs = '';
+
+    [['gone', b.gone], ['stable', b.stable], ['watch', b.watch]].forEach(([key, cnt]) => {
+      if (!cnt) return;
+      const h = hOf(cnt);
+      cursor -= h;
+      segs += `<rect class="seg-${key}" x="${x.toFixed(1)}" y="${cursor.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}"/>`;
+    });
+
+    const dim = state.year !== null && state.year !== y;
+    const on = state.year === y;
+
+    svg += `
+      <g class="tl-bar${dim ? ' is-dim' : ''}${on ? ' is-on' : ''}" data-year="${y}"
+         tabindex="${n ? 0 : -1}" role="button" aria-label="${y} 年，${n} 處">
+        <rect class="hit" x="${xOf(y).toFixed(1)}" y="${TL.padT}" width="${barW.toFixed(1)}" height="${plotH}"/>
+        ${segs}
+        ${n >= 4 ? `<text class="tl-count" x="${(x + barW / 2).toFixed(1)}" y="${(cursor - 6).toFixed(1)}" text-anchor="middle">${n}</text>` : ''}
+      </g>`;
+
+    if (y % 5 === 0 || y === y0 || y === y1) {
+      svg += `<text class="tl-tick" x="${(x + barW / 2).toFixed(1)}" y="${baseY + 20}" text-anchor="middle">${y}</text>`;
+    }
+  }
+
+  peaks.forEach((p, i) => {
+    const topEvent = Object.entries(p.b.events).sort((a, b) => b[1] - a[1])[0];
+    if (!topEvent) return;
+    const x = xOf(p.year) + barW / 2;
+    const labelY = TL.padT - 8 + i * 0;
+    svg += `
+      <line class="tl-anno-line" x1="${x.toFixed(1)}" y1="${baseY - hOf(p.n) - 22}" x2="${x.toFixed(1)}" y2="${labelY + 4}"/>
+      <text class="tl-anno" x="${x.toFixed(1)}" y="${labelY}" text-anchor="${i === 0 ? 'start' : 'end'}">${topEvent[0]}</text>`;
+  });
+
+  $('#timeline').innerHTML = svg;
+
+  $$('#timeline .tl-bar').forEach(el => {
+    const y = +el.dataset.year;
+    const toggle = () => { state.year = state.year === y ? null : y; refresh(); };
+    el.addEventListener('click', toggle);
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  $('[data-bind="timelineNote"]').textContent = state.year
+    ? `已選取 ${state.year} 年 · 再次點選取消`
+    : `色塊由下而上為已消失、已穩定、監測中 · 高峰年多對應單一重大事件`;
+}
+
+
+/* ── 5. 清單 ───────────────────────────── */
+
 function renderList() {
-  const visible = LAKES.filter(l => state.filter === 'all' || l.grade === state.filter);
-  const maxVol = Math.max(...LAKES.map(l => l.volume || 1));
+  const visible = visibleLakes();
 
-  $('#lakeList').innerHTML = visible.map(lake => {
-    const pct = v => v ? Math.round(v * 100) : 12;
-    const volPct  = pct(lake.volume ? lake.volume / maxVol : 0);
-    const gapVal  = lake.crestEl ? (lake.crestEl - lake.waterEl).toFixed(1) : '—';
-    const gapPct  = lake.crestEl
-      ? Math.round((1 - (lake.crestEl - lake.waterEl) / (lake.crestEl - lake.floorEl)) * 100)
-      : 12;
-    const peoplePct = lake.people ? Math.round(lake.people / 3000 * 100) : 12;
-
-    return `
-      <button class="lake ${lake.id === state.selected ? 'is-active' : ''}" data-id="${lake.id}">
-        <span class="tier g-${lake.grade}">${lake.grade}</span>
-        <span>
-          <span class="name">${lake.name}</span>
-          <span class="meta">${lake.where} · ${lake.confirm}</span>
-        </span>
-        <span class="kv">
-          <span class="label">蓄水量</span>
-          <span class="num">${lake.volume ? lake.volume.toLocaleString() : '—'}</span>
-          <span class="bar"><i class="g-${lake.grade}" style="width:${volPct}%"></i></span>
-        </span>
-        <span class="kv">
-          <span class="label">距壩頂</span>
-          <span class="num">${gapVal}</span>
-          <span class="bar"><i class="g-${lake.grade}" style="width:${gapPct}%"></i></span>
-        </span>
-        <span class="kv">
-          <span class="label">暴露人口</span>
-          <span class="num">${lake.people ? lake.people.toLocaleString() : '—'}</span>
-          <span class="bar"><i class="g-${lake.grade}" style="width:${peoplePct}%"></i></span>
-        </span>
-      </button>`;
-  }).join('');
+  $('#lakeList').innerHTML = visible.map(lake => `
+    <button class="lake ${lake.id === state.selected ? 'is-active' : ''}" data-id="${lake.id}">
+      <span class="yr">${lake.year || '—'}</span>
+      <span>
+        <span class="name">${lake.name}</span>
+        <span class="meta">${lake.county}${lake.town} · ${CAUSE_TEXT[lake.causeKey]}${lake.event ? ' · ' + lake.event : ''}</span>
+      </span>
+      <span class="vol">
+        <span class="num">${lake.volume ? lake.volume.toLocaleString() : '—'}</span><span class="u">萬 m³</span>
+      </span>
+      <span class="pill s-${lake.statusKey}">${STATUS_TEXT[lake.statusKey]}</span>
+    </button>`).join('');
 
   $$('#lakeList .lake').forEach(el =>
     el.addEventListener('click', () => select(el.dataset.id))
   );
 
   $('#listEmpty').hidden = visible.length > 0;
+
+  const bits = [];
+  if (state.status !== 'all') bits.push(STATUS_TEXT[state.status]);
+  if (state.cause  !== 'all') bits.push(CAUSE_TEXT[state.cause]);
+  if (state.year !== null)    bits.push(`${state.year} 年`);
   $('[data-bind="listCount"]').textContent =
-    `${visible.length} 處` + (state.filter === 'all' ? ' · 依風險排序' : ` · ${state.filter} 級`);
+    `${visible.length} 筆` + (bits.length ? ` · ${bits.join(' · ')}` : ' · 全部');
+
+  $('#resetBtn').hidden = bits.length === 0;
 }
 
-/* 示警紀錄 */
-function renderLog() {
-  $('#logList').innerHTML = ALERTS.map(a => `
-    <div class="log-row">
-      <time>${a.time}</time>
-      <span class="tag ${a.cls}">${a.tag}</span>
-      <span>${a.text}</span>
-    </div>`).join('');
-}
 
-/* 詳情面板 */
+/* ── 6. 詳情 ───────────────────────────── */
+
 function renderDetail() {
   const lake = LAKES.find(l => l.id === state.selected);
+  if (!lake) return;
+
   const set = (key, val) => {
     const el = $(`[data-bind="${key}"]`);
     if (el) el.textContent = val;
   };
 
-  const gradeEl = $('[data-bind="grade"]');
-  gradeEl.className = `grade g-${lake.grade}`;
-  gradeEl.textContent = `${lake.grade} 級 · ${lake.confirm}`;
+  const badge = $('[data-bind="status"]');
+  badge.className = `grade s-${lake.statusKey}`;
+  badge.textContent = lake.status || STATUS_TEXT[lake.statusKey];
 
   set('name', lake.name);
-  set('where', `${lake.where} · ${lake.lat.toFixed(4)}°N ${lake.lon.toFixed(4)}°E`);
+  set('where', `${lake.county}${lake.town}${lake.village} · ${lake.lat.toFixed(4)}°N ${lake.lon.toFixed(4)}°E`);
 
-  const known = lake.crestEl !== null;
-  const gap = known ? (lake.crestEl - lake.waterEl) : null;
+  set('volume', lake.volume ? lake.volume.toLocaleString() : '—');
+  set('volumeNote', lake.volume
+    ? (lake.volume >= 1000 ? '屬大型，潰決影響範圍可觀' : '清冊登載值')
+    : '清冊未登載或規模極小');
 
-  set('volume', lake.volumeRange);
-  set('volumeNote', known
-    ? '以最近一景影像水面範圍反演，含地形不確定性區間'
-    : '待下次過境取得第二景影像後估算');
-  set('gap', known ? gap.toFixed(1) : '—');
-  set('gapNote', known ? `較前次過境上升 ${lake.rise} m` : '尚未確認壩頂高程');
-  set('fill', known ? lake.fillHours : '—');
-  set('fillNote', known ? '依上游 24 小時累積雨量推估入流' : '—');
+  set('year', lake.year || '—');
+  set('formed', lake.formed ? `形成於 ${lake.formed}` : '形成日期未記載');
 
-  set('people', lake.people ? lake.people.toLocaleString() : '—');
-  set('roads', lake.roads !== null ? lake.roads : '—');
-  set('isolated', lake.isolated !== null ? lake.isolated : '—');
-  set('impactNote', known
-    ? `採 DEM 填洼快估，假設瞬時全潰。實際洪峰沿程衰減未計入，屬保守上限。最近避難收容處所：${lake.shelter}`
-    : '此處尚未確認為堰塞湖，暫不進行淹沒模擬。下次過境若水體仍存在，將自動升級並產出評估。');
-
-  drawSection(lake, known, gap);
-}
-
-/* 剖面圖 */
-function drawSection(lake, known, gap) {
-  const ratio = known
-    ? (lake.waterEl - lake.floorEl) / (lake.crestEl - lake.floorEl)
-    : 0.18;
-  const wy = waterY(ratio);
-  const lx = leftBankX(wy);
-  const rx = damFaceX(wy);
-
-  $('#waterBody').setAttribute('d',
-    `M${lx.toFixed(1)} ${wy.toFixed(1)} L${rx.toFixed(1)} ${wy.toFixed(1)} ` +
-    `L${SEC.basinR.x} ${SEC.basinR.y} L${SEC.basinL.x} ${SEC.basinL.y} Z`);
-
-  const line = $('#waterLine');
-  line.setAttribute('x1', lx.toFixed(1)); line.setAttribute('y1', wy.toFixed(1));
-  line.setAttribute('x2', rx.toFixed(1)); line.setAttribute('y2', wy.toFixed(1));
-
-  $('#crestLabel').textContent = known ? `壩頂 EL. ${lake.crestEl.toFixed(1)} m` : '壩頂高程未定';
-  const levelLabel = $('#levelLabel');
-  levelLabel.textContent = known ? `水位 EL. ${lake.waterEl.toFixed(1)} m` : '水位待確認';
-  levelLabel.setAttribute('y', (wy - 4).toFixed(1));
-
-  const caliper = $('#caliper');
-  const gapLabel = $('#gapLabel');
-  if (known) {
-    caliper.style.display = '';
-    gapLabel.style.display = '';
-    $('#calLine').setAttribute('y2', wy.toFixed(1));
-    $('#calFoot').setAttribute('y1', wy.toFixed(1));
-    $('#calFoot').setAttribute('y2', wy.toFixed(1));
-    gapLabel.setAttribute('y', ((SEC.crestY + wy) / 2 + 5).toFixed(1));
-    gapLabel.textContent = `${gap.toFixed(1)} m`;
+  /* 持續時間欄位混用日數與「持續至今」「<24HR」等文字 */
+  const dur = (lake.duration || '').trim();
+  const durNum = Number(dur);
+  if (dur === '') {
+    set('duration', '—'); set('durationUnit', ''); set('durationNote', '未記載');
+  } else if (!Number.isNaN(durNum)) {
+    set('duration', durNum.toLocaleString()); set('durationUnit', '日');
+    set('durationNote', durNum >= 365 ? `約 ${(durNum / 365).toFixed(1)} 年` : '自形成至潰決或穩定');
   } else {
-    caliper.style.display = 'none';
-    gapLabel.style.display = 'none';
+    set('duration', dur); set('durationUnit', ''); set('durationNote', '清冊原始登載');
   }
+
+  const rows = [
+    ['誘因',     lake.cause || '未記載',      !lake.cause],
+    ['觸發事件', lake.event || '未記載',      !lake.event],
+    ['地標',     lake.landmark || '未記載',   !lake.landmark],
+    ['坐落區位', lake.setting || '未記載',    !lake.setting],
+    ['潰決時間', lake.breachDate || '無紀錄', !lake.breachDate],
+    ['潰決原因', lake.breachCause || '無紀錄',!lake.breachCause],
+    ['清冊項次', `#${lake.seq}`,              false, true]
+  ];
+
+  $('#facts').innerHTML = rows.map(([k, v, muted, mono]) =>
+    `<dt>${k}</dt><dd class="${muted ? 'muted' : ''}${mono ? ' mono' : ''}">${v}</dd>`
+  ).join('');
 }
 
-/* 狀態列統計 */
+
+/* ── 7. 統計 ───────────────────────────── */
+
 function renderStats() {
-  $('[data-bind="countAll"]').textContent = `${LAKES.length} 處`;
-  $('[data-bind="countA"]').textContent = `${LAKES.filter(l => l.grade === 'A').length} 處`;
+  const by = key => LAKES.filter(l => l.statusKey === key).length;
+  $('[data-bind="countAll"]').textContent    = `${LAKES.length} 處`;
+  $('[data-bind="countWatch"]').textContent  = `${by('watch')} 處`;
+  $('[data-bind="countStable"]').textContent = `${by('stable')} 處`;
+  $('[data-bind="countGone"]').textContent   = `${by('gone')} 處`;
 }
 
 
-/* ── 5. 互動 ───────────────────────────── */
+/* ── 8. 互動 ───────────────────────────── */
 
 function select(id) {
   state.selected = id;
-  $$('.marker').forEach(m => m.classList.toggle('is-active', m.dataset.id === id));
+  syncMarkers();
   $$('#lakeList .lake').forEach(b => b.classList.toggle('is-active', b.dataset.id === id));
   renderDetail();
 }
 
-function applyFilter(f) {
-  state.filter = f;
-  $$('.filter').forEach(b => b.classList.toggle('is-on', b.dataset.filter === f));
-  $$('.marker').forEach(m => {
-    const lake = LAKES.find(l => l.id === m.dataset.id);
-    m.classList.toggle('is-dim', f !== 'all' && lake.grade !== f);
-  });
+function refresh() {
+  syncMarkers();
+  buildTimeline();
   renderList();
+
+  /* 若目前選取的紀錄被篩掉，改選第一筆可見紀錄 */
+  const visible = visibleLakes();
+  if (visible.length && !visible.some(l => l.id === state.selected)) {
+    select(visible[0].id);
+  }
+}
+
+function bindFilters() {
+  $$('.filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { kind, val } = btn.dataset;
+      state[kind] = val;
+      $$(`.filter[data-kind="${kind}"]`).forEach(b =>
+        b.classList.toggle('is-on', b.dataset.val === val));
+      refresh();
+    });
+  });
+
+  $('#resetBtn').addEventListener('click', () => {
+    state.status = 'all'; state.cause = 'all'; state.year = null;
+    $$('.filter').forEach(b => b.classList.toggle('is-on', b.dataset.val === 'all'));
+    refresh();
+  });
 }
 
 
-/* ── 6. 啟動 ───────────────────────────── */
+/* ── 9. 啟動 ───────────────────────────── */
 
 function init() {
+  if (!LAKES.length) {
+    $('#lakeList').innerHTML =
+      '<div class="empty"><b>找不到清冊資料</b>請確認 data/lakes.js 已產生，' +
+      '或執行 tools/csv_to_js.py 重新轉換。</div>';
+    return;
+  }
+
   renderBase();
   renderMarkers();
-  renderList();
-  renderLog();
   renderStats();
-  select(state.selected);
+  bindFilters();
 
-  $$('.filter').forEach(btn =>
-    btn.addEventListener('click', () => applyFilter(btn.dataset.filter))
-  );
+  /* 預設選最近一筆監測中的紀錄，沒有就選第一筆 */
+  const first = LAKES.find(l => l.statusKey === 'watch') || LAKES[0];
+  state.selected = first.id;
+
+  refresh();
+  renderDetail();
 }
 
 document.addEventListener('DOMContentLoaded', init);
