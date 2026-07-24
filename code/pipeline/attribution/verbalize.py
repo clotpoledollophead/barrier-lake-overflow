@@ -360,6 +360,7 @@ def absence(kind: str = "not_recorded") -> str:
 
 
 if __name__ == "__main__":
+    # 執行方式：python -m pipeline.attribution.verbalize
     import doctest
     fails, total = doctest.testmod()
     print(f"verbalize: {total - fails}/{total} 通過")

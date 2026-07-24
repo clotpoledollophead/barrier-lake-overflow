@@ -1,6 +1,8 @@
 # attribution — 成因歸因與溢流預報
 
-規則式（rule-based）的歸因判定與中文敘述生成。
+> 原始碼位置：`code/pipeline/attribution/`
+
+規則式（rule-based）的歸因判定與中文敘述生成，**不使用 LLM**。
 
 災防系統的輸出必須可稽核：每一句話都要能追到是哪條規則、哪個門檻
 產生的。純模板法不是退而求其次，是這個場域的正確工程選擇。
@@ -24,8 +26,8 @@
 | `templates.yaml` | 句型庫，決定「話怎麼說」 | **領域專家可直接改** |
 | `compose.py` | 查表、填槽、依語序串接。**無判斷邏輯** | 少動 |
 | `forecast.py` | 水量平衡與溢流時間區間 | 工程師 |
-| `annotate.py` | 批次跑全清冊，把敘述寫回 `data/lakes.js` | — |
-| `test_attribution.py` | 單元測試（39 項） | 工程師 |
+| `annotate.py` | 批次跑全清冊，把敘述寫回 `dashboard/data/lakes.js` | — |
+| `../../tests/test_attribution.py` | 單元測試（39 項） | 工程師 |
 
 把 `templates.yaml` 獨立出來很重要——水保署或災防領域的人可以直接
 指出「這句話在專業上不成立」並自行修訂，不需要碰程式。這是黑箱
@@ -48,22 +50,26 @@
 
 ## 用法
 
+全部於 `code/` 目錄下執行：
+
 ```bash
-pip install pyyaml pyproj
+# 單元測試（39 項）
+pytest
 
-# 單元測試（含 doctest）
-python3 test_attribution.py
-python3 verbalize.py && python3 rules.py && python3 forecast.py
+# 各模組的 doctest 與示範
+python -m pipeline.attribution.verbalize
+python -m pipeline.attribution.rules
+python -m pipeline.attribution.forecast
+python -m pipeline.attribution.compose
 
-# 批次加註全清冊 → data/lakes.js 會多出 narrative 與 rulesFired 欄位
-python3 annotate.py
+# 批次加註全清冊 → dashboard/data/lakes.js 多出 narrative 與 rulesFired
+python -m pipeline.attribution.annotate
 ```
 
 程式內呼叫：
 
 ```python
-from rules import LakeRecord, Observations, attribute
-from compose import Composer
+from pipeline.attribution import LakeRecord, Observations, attribute, describe
 
 rec = LakeRecord(seq=71, name="花蓮馬太鞍溪", cause="颱風",
                  event="薇帕颱風", duration="64", volume=9100.0,
@@ -71,7 +77,7 @@ rec = LakeRecord(seq=71, name="花蓮馬太鞍溪", cause="颱風",
 obs = Observations(typhoon_name="薇帕颱風", typhoon_distance_km=180.4,
                    rain_24h_mm=460.0, rain_percentile=99.4)
 
-result = Composer("templates.yaml").render(attribute(rec, obs))
+result = describe(attribute(rec, obs))
 print(result.text)
 print(result.rules_fired)   # 稽核用
 ```
@@ -136,7 +142,7 @@ Sentinel-1 約 6 日重訪，兩次觀測之間水位是**純靠雨量外推、�
 
 ## 尚未介接
 
-`annotate.py` 的 `load_observations()` 目前回傳 `None`。介接以下資料源
+`annotate.py` 的 `load_observations()` 目前回傳 `None`。未來的實作應放在 `pipeline/ingest/cwa.py`，介接以下資料源
 後填入 `Observations` 即可，**敘述邏輯完全不用改**：
 
 - CWA 自動雨量站歷史資料 → `rain_24h_mm` / `rain_max_hourly_mm`

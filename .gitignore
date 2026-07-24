@@ -1,0 +1,82 @@
+# ════════════════════════════════════════════════════════
+# OSSInt 2026
+#
+# 原則：原始資料進版控（可重現性的根據），中繼產物與影像不進。
+# ════════════════════════════════════════════════════════
+
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── 虛擬環境 ──────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── 資料 ──────────────────────────────────────────────
+# 原始清冊等小型 CSV 要進版控，其餘一律排除
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/*.csv
+
+# 中繼產物可重新產生，不進版控
+data/derived/
+data/interim/
+data/cache/
+
+# ── 衛星影像與地理資料 ────────────────────────────────
+# 單景 Sentinel-1 動輒數 GB，GitHub 單檔上限 100 MB
+*.SAFE/
+*.tif
+*.tiff
+*.img
+*.dim
+*.data/
+*.nc
+*.hdf
+*.zip
+*.tar.gz
+
+# DEM 與大型向量圖資
+*.asc
+*.shp
+*.shx
+*.dbf
+*.gpkg
+*.geoparquet
+
+# ── 例外：前端讀取的產生物 ────────────────────────────
+# lakes.js 是 inventory.py 的產物，理論上不該進版控，
+# 但前端沒有 build step，不進 git 網頁就開不起來。
+# 檔頭已註明「自動產生，請勿手動編輯」。
+!code/dashboard/data/lakes.js
+
+# ── 憑證與金鑰 ────────────────────────────────────────
+# CWA API key、CDSE 帳密、TDX client secret 一律不得進版控
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.yaml
+
+# ── 編輯器與作業系統 ──────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ── Node（若之後前端加上建置工具）─────────────────────
+node_modules/
+package-lock.json

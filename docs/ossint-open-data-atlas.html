@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>開放資料圖鑑：OSSInt 2026 資料源總覽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ledger:#EEF1EC;
+    --paper:#FBFCFA;
+    --ink:#20291F;
+    --muted:#5E6B5C;
+    --hairline:#CBD4C8;
+    --pine:#2F6B4E;
+    --pine-soft:#E1EEE6;
+    /* 類別色票（圖例的一部分，不是裝飾） */
+    --c-sat:#2C5F8A;      /* 衛星影像 */
+    --c-terra:#8A5A2B;    /* 地形圖資 */
+    --c-hazard:#AE3A2C;   /* 災害防救 */
+    --c-marine:#B5306F;   /* 海事航空 */
+    --c-transit:#1F7A73;  /* 交通運輸 */
+    --c-socio:#6B4FA1;    /* 人口社經 */
+    --c-intel:#5E6B5C;    /* 文字情資 */
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Noto Serif TC',serif;
+    --sans:'Noto Sans TC',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--ledger);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.85;
+  }
+  a{color:var(--pine);text-decoration:none;border-bottom:1px solid transparent;word-break:break-all}
+  a:hover,a:focus-visible{border-bottom-color:var(--pine)}
+  a:focus-visible{outline:2px solid var(--pine);outline-offset:2px}
+
+  /* ── Masthead：圖例框 ── */
+  .masthead{
+    border-bottom:2px solid var(--ink);
+    background:
+      repeating-linear-gradient(90deg, transparent 0 118px, rgba(32,41,31,.08) 118px 119px),
+      var(--ledger);
+  }
+  .masthead-inner{max-width:960px;margin:0 auto;padding:72px 28px 48px}
+  .legend-corner{
+    font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:40px;
+  }
+  .legend-corner .fix{color:var(--pine)}
+  h1{font-family:var(--serif);font-weight:900;font-size:clamp(32px,5.4vw,52px);line-height:1.25}
+  .subtitle{font-family:var(--serif);font-weight:500;font-size:clamp(17px,2.4vw,21px);color:var(--muted);margin-top:14px;max-width:660px}
+
+  /* 圖例列 */
+  .legend-bar{
+    margin-top:36px;border:1px solid var(--ink);background:var(--paper);
+    display:flex;flex-wrap:wrap;
+  }
+  .legend-bar .cell{
+    flex:1 1 130px;padding:10px 14px;border-right:1px solid var(--hairline);
+    font-size:12.5px;display:flex;align-items:center;gap:8px;
+  }
+  .legend-bar .cell:last-child{border-right:none}
+  .chip{width:12px;height:12px;flex:0 0 12px;border:1px solid rgba(0,0,0,.25)}
+
+  main{max-width:960px;margin:0 auto;padding:24px 28px 96px}
+  .toc{
+    background:var(--paper);border:1px solid var(--hairline);
+    padding:22px 26px;margin:36px 0 12px;font-size:14.5px;
+  }
+  .toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;columns:2;column-gap:36px}
+  .toc li{padding:3px 0;break-inside:avoid}
+  .toc .no{font-family:var(--mono);color:var(--pine);margin-right:10px;font-size:12.5px}
+
+  section{margin-top:68px}
+  .sec-mark{
+    display:flex;align-items:center;gap:14px;
+    border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:24px;
+  }
+  .swatch{width:22px;height:22px;flex:0 0 22px;border:1.5px solid var(--ink)}
+  h2{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.3}
+  .sec-no{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-left:auto}
+  p{margin:12px 0;max-width:74ch}
+  strong{font-weight:700}
+  .lead{font-size:17.5px}
+
+  table{
+    width:100%;border-collapse:collapse;background:var(--paper);
+    font-size:14px;line-height:1.65;margin:18px 0;border:1px solid var(--ink);
+  }
+  caption{
+    caption-side:top;text-align:left;font-family:var(--mono);
+    font-size:11.5px;letter-spacing:.1em;color:var(--muted);padding:0 0 8px 2px;
+  }
+  th{
+    font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.06em;
+    text-align:left;background:var(--pine-soft);border-bottom:1.5px solid var(--pine);
+    padding:9px 12px;
+  }
+  td{padding:10px 12px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .m{font-family:var(--mono);font-size:12.3px}
+  .free{color:#2A7A3B;font-weight:700;white-space:nowrap}
+  .cond{color:#8A5A2B;font-weight:700;white-space:nowrap}
+  .use{font-family:var(--mono);font-size:11px;letter-spacing:.04em;white-space:nowrap;
+       border:1px solid var(--hairline);padding:1px 7px;display:inline-block;margin:1px 2px 1px 0;background:var(--ledger)}
+  .use.dv{border-color:var(--c-marine);color:var(--c-marine)}
+  .use.bl{border-color:var(--c-transit);color:var(--c-transit)}
+
+  .note{
+    padding:16px 20px;margin:20px 0;max-width:78ch;background:var(--paper);
+    font-size:15px;border-left:4px solid var(--pine);
+    border-top:1px solid var(--hairline);border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline);
+  }
+  .note .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--pine);display:block;margin-bottom:6px}
+
+  ul.plain{margin:12px 0 12px 2px;list-style:none}
+  ul.plain li{padding:6px 0 6px 22px;position:relative;max-width:72ch}
+  ul.plain li::before{
+    content:"";position:absolute;left:2px;top:15px;width:10px;height:10px;
+    border:1.5px solid var(--pine);
+  }
+
+  footer{border-top:2px solid var(--ink);background:var(--paper)}
+  .footer-inner{
+    max-width:960px;margin:0 auto;padding:28px;
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  }
+  @media (max-width:640px){
+    .toc ol{columns:1}
+    .legend-bar .cell{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--hairline)}
+  }
+  @media print{body{background:#fff}.masthead{background:#fff}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="legend-corner">
+      <span>LEGEND NO. OSSINT-2026-00</span>
+      <span class="fix">OPEN DATA ATLAS · 開放資料圖鑑</span>
+      <span>ENTRIES: 24</span>
+    </div>
+    <h1>開放資料圖鑑<br>OSSInt 2026 資料源總覽</h1>
+    <p class="subtitle">暗船偵測案與堰塞湖評估案共用的資料底冊：每筆資料的提供者、取得方式、授權條件與適用範圍，含註冊清單與授權注意事項</p>
+    <div class="legend-bar" aria-label="類別圖例">
+      <div class="cell"><span class="chip" style="background:var(--c-sat)"></span>衛星影像</div>
+      <div class="cell"><span class="chip" style="background:var(--c-terra)"></span>地形圖資</div>
+      <div class="cell"><span class="chip" style="background:var(--c-hazard)"></span>災害防救</div>
+      <div class="cell"><span class="chip" style="background:var(--c-marine)"></span>海事航空</div>
+      <div class="cell"><span class="chip" style="background:var(--c-transit)"></span>交通運輸</div>
+      <div class="cell"><span class="chip" style="background:var(--c-socio)"></span>人口社經</div>
+      <div class="cell"><span class="chip" style="background:var(--c-intel)"></span>文字情資</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc" aria-label="目錄">
+  <div class="toc-title">CONTENTS · 目錄</div>
+  <ol>
+    <li><span class="no">01</span><a href="#s1">衛星影像</a></li>
+    <li><span class="no">02</span><a href="#s2">地形與基礎圖資</a></li>
+    <li><span class="no">03</span><a href="#s3">災害防救</a></li>
+    <li><span class="no">04</span><a href="#s4">海事與航空</a></li>
+    <li><span class="no">05</span><a href="#s5">交通運輸</a></li>
+    <li><span class="no">06</span><a href="#s6">人口與社會經濟</a></li>
+    <li><span class="no">07</span><a href="#s7">文字情資</a></li>
+    <li><span class="no">08</span><a href="#s8">兩案資料對應矩陣</a></li>
+    <li><span class="no">09</span><a href="#s9">授權注意事項</a></li>
+    <li><span class="no">10</span><a href="#s10">開工前註冊清單</a></li>
+  </ol>
+</nav>
+
+<p class="lead" style="margin-top:40px">閱讀方式：每筆資料標註「用途」——<span class="use dv">暗船</span>表示用於暗船偵測案、<span class="use bl">堰塞湖</span>表示用於堰塞湖評估案，兩者皆標表示共用。授權欄的<span class="free">　開放</span>代表無條件取用，<span class="cond">　條件</span>代表需註冊、申請或有附帶義務（詳見第 09 節）。</p>
+
+<!-- ══════════ 01 衛星影像 ══════════ -->
+<section id="s1">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-sat)"></span><h2>衛星影像</h2><span class="sec-no">01 / SATELLITE</span></div>
+  <table>
+    <caption>TABLE 1 — 衛星影像資料源</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Sentinel-1 SAR</strong></td>
+        <td>ESA Copernicus<br><a href="https://dataspace.copernicus.eu">dataspace.copernicus.eu</a></td>
+        <td>C-band SAR，IW GRD / SLC，VV+VH，台灣約每 6 天覆蓋；STAC / OData API 自動下載</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>Sentinel-2 光學</strong></td>
+        <td>ESA Copernicus（同上）</td>
+        <td>10 m 多光譜，5 天重訪；NDWI 水體、NDVI 植被指標</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>Landsat 8/9</strong></td>
+        <td>USGS<br><a href="https://earthexplorer.usgs.gov">earthexplorer.usgs.gov</a></td>
+        <td>30 m 多光譜，長期時序存檔；適合歷史基準與變遷分析</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>NASA FIRMS</strong></td>
+        <td>NASA<br><a href="https://firms.modaps.eosdis.nasa.gov">firms.modaps.eosdis.nasa.gov</a></td>
+        <td>MODIS / VIIRS 準即時熱點；災害監測輔助</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>福衛五號 / 八號</strong></td>
+        <td>TASA 國家太空中心（影像申請服務）</td>
+        <td>高解析光學；學術用途可申請，有程序與額度</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="cond">申請</td>
+      </tr>
+      <tr>
+        <td><strong>xView3-SAR</strong></td>
+        <td>Defense Innovation Unit<br><a href="https://iuu.xview.us">iuu.xview.us</a></td>
+        <td>全球最大公開暗船偵測標註資料集：SAR 影像 + 船位 + AIS 對應標記；模型訓練用</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="free">開放</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="tag">競賽情報</span>
+    主辦方即為 TASA——說明會務必詢問是否提供參賽隊伍專屬的福衛影像額度或快速申請通道；若有，兩案的高解析確認能力都會顯著升級。
+  </div>
+</section>
+
+<!-- ══════════ 02 地形與基礎圖資 ══════════ -->
+<section id="s2">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-terra)"></span><h2>地形與基礎圖資</h2><span class="sec-no">02 / TERRAIN</span></div>
+  <table>
+    <caption>TABLE 2 — 地形與基礎圖資</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>20 m DEM（全台）</strong></td>
+        <td>內政部<br><a href="https://data.gov.tw">data.gov.tw</a> 直接下載</td>
+        <td>全台數值地形模型；水位反演、蓄水量曲線、坡度、雷達陰影遮罩的核心</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>NLSC 圖資服務雲</strong></td>
+        <td>內政部國土測繪中心<br><a href="https://maps.nlsc.gov.tw">maps.nlsc.gov.tw</a></td>
+        <td>台灣通用電子地圖、正射影像、道路、建物；WMTS / WMS 直接串接</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>海岸線圖資</strong></td>
+        <td>NLSC / 內政部</td>
+        <td>SAR 陸地遮罩用（向海緩衝裁切）</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>OpenStreetMap</strong></td>
+        <td><a href="https://www.openstreetmap.org">openstreetmap.org</a>（Geofabrik 下載台灣區塊）</td>
+        <td>道路、建物、POI；競賽明列資料源</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="cond">ODbL</td>
+      </tr>
+      <tr>
+        <td><strong>Overture Maps</strong></td>
+        <td><a href="https://overturemaps.org">overturemaps.org</a></td>
+        <td>建物與地點的整合開放圖資；GeoParquet 格式適合大量分析</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="cond">混合授權</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 03 災害防救 ══════════ -->
+<section id="s3">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-hazard)"></span><h2>災害防救</h2><span class="sec-no">03 / HAZARD</span></div>
+  <table>
+    <caption>TABLE 3 — 災害防救資料源</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>CWA 開放資料平台</strong></td>
+        <td>中央氣象署<br><a href="https://opendata.cwa.gov.tw">opendata.cwa.gov.tw</a></td>
+        <td>地震報告（含測站震度）、雨量觀測與 QPE、颱風路徑、海況風場；REST API，免費 API key</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>NCDR 災害示警平台</strong></td>
+        <td>國家災害防救科技中心<br><a href="https://alerts.ncdr.nat.gov.tw">alerts.ncdr.nat.gov.tw</a></td>
+        <td>各部會整合示警，CAP 1.2 標準格式；本系統示警輸出的介接規範來源</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>水利署水文與河川圖資</strong></td>
+        <td>經濟部水利署（data.gov.tw 與水利資料開放平台）</td>
+        <td>河川圖籍、集水區界、河川水位站、水庫資訊、淹水感測器</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>土石流潛勢溪流</strong></td>
+        <td>農業部農村發展及水土保持署</td>
+        <td>全台潛勢溪流圖層；觸發後集水區排序的先驗風險</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>山崩與地滑地質敏感區</strong></td>
+        <td>經濟部地質調查及礦業管理中心</td>
+        <td>地質敏感區圖層；與潛勢溪流疊合使用</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>民生公共物聯網</strong></td>
+        <td>跨部會（NCHC 參與維運）<br><a href="https://ci.taiwan.gov.tw">ci.taiwan.gov.tw</a></td>
+        <td>水位、地震 P 波、空品、地下水感測網；主辦單位之一的平台，簡報引用有加分意義</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 04 海事與航空 ══════════ -->
+<section id="s4">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-marine)"></span><h2>海事與航空</h2><span class="sec-no">04 / MARINE</span></div>
+  <table>
+    <caption>TABLE 4 — 海事與航空資料源</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Global Fishing Watch</strong></td>
+        <td><a href="https://globalfishingwatch.org">globalfishingwatch.org</a>（API）</td>
+        <td>全球 AIS 軌跡與船舶資料庫，內建 loitering / encounter / AIS gap 事件；延遲約 72 小時</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="cond">研究免費</td>
+      </tr>
+      <tr>
+        <td><strong>AISHub</strong></td>
+        <td><a href="https://www.aishub.net">aishub.net</a></td>
+        <td>即時 AIS 交換網；互惠制——自架接收站貢獻資料換全網存取</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="cond">互惠</td>
+      </tr>
+      <tr>
+        <td><strong>海纜路線圖</strong></td>
+        <td>TeleGeography<br><a href="https://www.submarinecablemap.com">submarinecablemap.com</a></td>
+        <td>全球海纜路線與登陸站圖層（GeoJSON）</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="cond">CC BY-SA</td>
+      </tr>
+      <tr>
+        <td><strong>海纜障礙公告</strong></td>
+        <td>數位發展部（moda）</td>
+        <td>實際斷纜事件的時間與位置；回測案例的事實基準</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="free">公開</td>
+      </tr>
+      <tr>
+        <td><strong>OpenSky Network</strong></td>
+        <td><a href="https://opensky-network.org">opensky-network.org</a>（API）</td>
+        <td>開放 ADS-B 航空軌跡；空域異常活動的延伸選項</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="cond">研究免費</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 05 交通運輸 ══════════ -->
+<section id="s5">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-transit)"></span><h2>交通運輸</h2><span class="sec-no">05 / TRANSIT</span></div>
+  <table>
+    <caption>TABLE 5 — 交通運輸資料源</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>TDX 運輸資料流通服務</strong></td>
+        <td>交通部<br><a href="https://tdx.transportdata.tw">tdx.transportdata.tw</a></td>
+        <td>全台公共運輸、公路路況、道路網；淹沒範圍疊道路中斷、孤島聚落分析用；免費會員 API</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 06 人口與社會經濟 ══════════ -->
+<section id="s6">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-socio)"></span><h2>人口與社會經濟</h2><span class="sec-no">06 / SOCIO</span></div>
+  <table>
+    <caption>TABLE 6 — 人口與社會經濟資料源</caption>
+    <thead><tr><th>資料</th><th>提供者 / 入口</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>SEGIS 統計格網</strong></td>
+        <td>內政部社會經濟資料服務平台<br><a href="https://segis.moi.gov.tw">segis.moi.gov.tw</a></td>
+        <td>人口統計格網（村里 / 網格層級）；暴露人口與脆弱度分析核心</td>
+        <td><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>政府資料開放平台</strong></td>
+        <td>國發會<br><a href="https://data.gov.tw">data.gov.tw</a></td>
+        <td>總入口：避難收容處所、村里界、其他兜底需求由此檢索</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="free">開放</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 07 文字情資 ══════════ -->
+<section id="s7">
+  <div class="sec-mark"><span class="swatch" style="background:var(--c-intel)"></span><h2>文字情資</h2><span class="sec-no">07 / INTEL</span></div>
+  <table>
+    <caption>TABLE 7 — 文字情資來源（NLP 模組輸入）</caption>
+    <thead><tr><th>資料</th><th>提供者 / 取得</th><th>內容與規格</th><th>用途</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>海巡署新聞稿</strong></td>
+        <td>海洋委員會海巡署（官網爬蟲 / RSS）</td>
+        <td>驅離、扣留、查處事件的官方敘述；事件抽取主要來源</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="free">公開</td>
+      </tr>
+      <tr>
+        <td><strong>航港局航船布告</strong></td>
+        <td>交通部航港局</td>
+        <td>禁錨區、施工區、航行警告；規則圖層與事件佐證</td>
+        <td><span class="use dv">暗船</span></td>
+        <td class="free">公開</td>
+      </tr>
+      <tr>
+        <td><strong>媒體海事 / 災情報導</strong></td>
+        <td>主要媒體 RSS</td>
+        <td>事件時間軸的補充素材；災情通報亦可供堰塞湖案關聯</td>
+        <td><span class="use dv">暗船</span><span class="use bl">堰塞湖</span></td>
+        <td class="cond">僅供分析</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════ 08 對應矩陣 ══════════ -->
+<section id="s8">
+  <div class="sec-mark"><span class="swatch" style="background:var(--paper)"></span><h2>兩案資料對應矩陣</h2><span class="sec-no">08 / MATRIX</span></div>
+  <p>核心資料（不含選配與兜底來源）在兩案管線中的角色：</p>
+  <table>
+    <caption>TABLE 8 — 資料 × 管線角色</caption>
+    <thead><tr><th>資料</th><th>暗船偵測案</th><th>堰塞湖評估案</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sentinel-1 SAR</strong></td><td>船舶偵測主感測器</td><td>崩塌變化 + 水體萃取主感測器</td></tr>
+      <tr><td><strong>Sentinel-2 光學</strong></td><td>—</td><td>雲隙時的高信心確認</td></tr>
+      <tr><td><strong>GFW / AISHub</strong></td><td>AIS 軌跡：匹配與行為分析</td><td>—</td></tr>
+      <tr><td><strong>TeleGeography + moda</strong></td><td>海纜路線與敏感區規則</td><td>—</td></tr>
+      <tr><td><strong>CWA API</strong></td><td>海況過濾（浪花誤判）</td><td>觸發（地震 / 雨量）+ 入流估算</td></tr>
+      <tr><td><strong>內政部 20 m DEM</strong></td><td>—</td><td>量化核心：水位、蓄水量、淹沒</td></tr>
+      <tr><td><strong>水利署河川圖資</strong></td><td>—</td><td>堰塞湖判定的河道交叉</td></tr>
+      <tr><td><strong>潛勢 / 敏感區圖層</strong></td><td>—</td><td>集水區排序的先驗風險</td></tr>
+      <tr><td><strong>SEGIS + TDX + NLSC</strong></td><td>底圖</td><td>暴露人口、道路中斷、孤島聚落</td></tr>
+      <tr><td><strong>xView3-SAR</strong></td><td>偵測模型訓練</td><td>—</td></tr>
+      <tr><td><strong>文字情資</strong></td><td>NLP 事件抽取與時空關聯</td><td>災情通報關聯（延伸）</td></tr>
+      <tr><td><strong>NCDR CAP</strong></td><td>—</td><td>示警輸出介接標準</td></tr>
+    </tbody>
+  </table>
+  <p>矩陣揭示的共用底座：<strong>Sentinel-1 擷取與前處理、CWA 介接、PostGIS 底圖服務</strong>三者兩案通用——先建這三塊，之後不論主推哪一案都不浪費。</p>
+</section>
+
+<!-- ══════════ 09 授權注意事項 ══════════ -->
+<section id="s9">
+  <div class="sec-mark"><span class="swatch" style="background:var(--paper)"></span><h2>授權注意事項</h2><span class="sec-no">09 / LICENSE</span></div>
+  <ul class="plain">
+    <li><strong>Copernicus（Sentinel-1/2）</strong> — 免費開放含商業使用，僅需標註來源（"Contains modified Copernicus Sentinel data"）。無實質限制。</li>
+    <li><strong>政府開放資料（CWA、DEM、水利署、SEGIS、TDX 等）</strong> — 政府資料開放授權條款第一版，相容 CC BY 4.0，標註來源即可。</li>
+    <li><strong>Global Fishing Watch</strong> — API 對非商業研究免費，需同意其資料使用條款；成果發表需標註。競賽用途屬研究展示，符合範圍，但若團隊日後商業化需另談授權。</li>
+    <li><strong>AISHub</strong> — 互惠義務：持續貢獻接收資料才保有存取權；接收站下線即失效，demo 前留意。</li>
+    <li><strong>TeleGeography 海纜圖</strong> — CC BY-SA：<strong>share-alike 具傳染性</strong>，衍生圖層需以相同授權釋出。建議海纜圖層獨立存放、不與其他資料混製衍生檔，避免授權糾纏。</li>
+    <li><strong>OpenStreetMap</strong> — ODbL：衍生資料庫需開放，地圖成果標註 © OpenStreetMap contributors。</li>
+    <li><strong>媒體報導</strong> — 僅做分析與連結引用，不重製全文入庫；事件卡片放摘要與原文連結。</li>
+    <li><strong>福衛影像</strong> — 依 TASA 申請條款，通常限申請用途，不得再散布；報告中只放衍生分析結果。</li>
+  </ul>
+  <div class="note">
+    <span class="tag">提案書寫法建議</span>
+    直接附上這張授權對照，展示團隊對開源授權的成熟理解——「開源」是本競賽的命題關鍵字，多數隊伍只會列資料清單，能講清楚 share-alike 傳染性與互惠義務的隊伍極少。
+  </div>
+</section>
+
+<!-- ══════════ 10 註冊清單 ══════════ -->
+<section id="s10">
+  <div class="sec-mark"><span class="swatch" style="background:var(--paper)"></span><h2>開工前註冊清單</h2><span class="sec-no">10 / CHECKLIST</span></div>
+  <table>
+    <caption>TABLE 9 — 帳號與金鑰（皆免費，總計約一小時可辦完）</caption>
+    <thead><tr><th>項目</th><th>入口</th><th>備註</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CDSE 帳號</strong></td><td class="m">dataspace.copernicus.eu</td><td>Sentinel 下載；註冊即用</td></tr>
+      <tr><td><strong>CWA API key</strong></td><td class="m">opendata.cwa.gov.tw</td><td>會員註冊後即發金鑰</td></tr>
+      <tr><td><strong>GFW API token</strong></td><td class="m">globalfishingwatch.org/our-apis</td><td>填研究用途說明，審核約數個工作天——<strong>建議最先辦</strong></td></tr>
+      <tr><td><strong>TDX 會員</strong></td><td class="m">tdx.transportdata.tw</td><td>OAuth2 client 憑證</td></tr>
+      <tr><td><strong>SEGIS 會員</strong></td><td class="m">segis.moi.gov.tw</td><td>格網資料下載需登入</td></tr>
+      <tr><td><strong>TWCC 帳號</strong></td><td class="m">NCHC</td><td>說明會確認競賽是否提供額度</td></tr>
+      <tr><td><strong>TASA 影像申請</strong>（選配）</td><td class="m">TASA 影像服務</td><td>學術申請程序較長，若要用需 8 月初送件</td></tr>
+      <tr><td><strong>xView3 資料集</strong></td><td class="m">iuu.xview.us</td><td>同意條款後下載（數百 GB，先下 chip 子集）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>OSSINT 2026 · OPEN DATA ATLAS 開放資料圖鑑</span>
+    <span>DRAFT v0.1 · 2026-07-15 · 內部工作文件</span>
+  </div>
+</footer>
+
+</body>
+</html>

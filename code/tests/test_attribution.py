@@ -6,29 +6,26 @@ test_attribution.py — 單元測試
 但存續時間從 2 日到 64 日、潰決原因從溢流沖刷到機具開挖，
 剛好檢驗模板法能否正確區分。
 
-執行：
-    python3 test_attribution.py
+執行（於 code/ 目錄下）：
+    pytest
+    python -m pytest tests/test_attribution.py -v
 """
 
 from __future__ import annotations
 
-import os
-import sys
 import unittest
 from datetime import datetime, timedelta
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+from pipeline.attribution import verbalize as V
+from pipeline.attribution.compose import Composer
+from pipeline.attribution.forecast import (BasinParams, LakeState, RainScenario,
+                                           elevation_at, forecast,
+                                           remaining_capacity, volume_at)
+from pipeline.attribution.rules import (LakeRecord, Observations, attribute,
+                                        infer_river, normalize_breach_cause,
+                                        parse_duration_days, typhoon_position)
 
-import verbalize as V
-from rules import (LakeRecord, Observations, attribute, infer_river,
-                   normalize_breach_cause, typhoon_position, parse_duration_days)
-from compose import Composer
-from forecast import (BasinParams, LakeState, RainScenario, forecast,
-                      remaining_capacity, volume_at, elevation_at)
-
-
-COMPOSER = Composer(os.path.join(HERE, "templates.yaml"))
+COMPOSER = Composer()
 
 
 # ══════════════════════════════════════════

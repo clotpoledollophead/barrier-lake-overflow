@@ -6,7 +6,7 @@ annotate.py — 批次產生全清冊的成因敘述
 data/lakes.js（新增 narrative 與 rulesFired 欄位），供前端顯示。
 
 用法：
-    python3 attribution/annotate.py
+    python -m pipeline.attribution.annotate
 
 觀測資料（雨量、颱風距離、地震規模）目前尚未介接，因此多數紀錄
 只會產出不依賴觀測的句子。介接 CWA API 後，把觀測值填進
@@ -16,24 +16,18 @@ load_observations() 即可自動變詳細——敘述邏輯完全不用改。
 from __future__ import annotations
 
 import json
-import os
-import re
-import sys
+from pathlib import Path
 from typing import Optional
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from .compose import Composer
+from .rules import LakeRecord, Observations, attribute
 
-from rules import LakeRecord, Observations, attribute
-from compose import Composer
-
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-DATA = os.path.join(ROOT, "data", "lakes.js")
-TEMPLATES = os.path.join(HERE, "templates.yaml")
+# code/pipeline/attribution/annotate.py → code/
+CODE_ROOT = Path(__file__).resolve().parents[2]
+DATA = CODE_ROOT / "dashboard" / "data" / "lakes.js"
 
 
-def read_lakes(path: str) -> list:
+def read_lakes(path) -> list:
     """從 lakes.js 取出 JSON 陣列。"""
     with open(path, encoding="utf-8") as f:
         src = f.read()
@@ -41,9 +35,9 @@ def read_lakes(path: str) -> list:
     return json.loads(src[start:end])
 
 
-def write_lakes(path: str, rows: list) -> None:
+def write_lakes(path, rows: list) -> None:
     header = (
-        "/* 由 tools/csv_to_js.py 產生，並由 attribution/annotate.py 加註敘述。\n"
+        "/* 由 pipeline/ingest/inventory.py 產生，並由 pipeline/attribution/annotate.py 加註敘述。\n"
         "   請勿手動編輯。\n"
         "   資料來源：農業部農村發展及水土保持署 堰塞湖清冊\n"
         "   https://tech.ardswc.gov.tw/Results/BarrierLakeInfo\n"
@@ -94,11 +88,14 @@ def load_observations(row: dict) -> Optional[Observations]:
 
 
 def main() -> None:
-    if not os.path.exists(DATA):
-        raise SystemExit(f"找不到 {DATA}，請先執行 tools/csv_to_js.py")
+    if not DATA.exists():
+        raise SystemExit(
+            f"找不到 {DATA}\n"
+            "請先執行：python -m pipeline.ingest.inventory "
+            "../data/raw/taiwan-barrier-lakes.csv dashboard/data/lakes.js")
 
     rows = read_lakes(DATA)
-    composer = Composer(TEMPLATES)
+    composer = Composer()
 
     annotated = 0
     unresolved_total = []

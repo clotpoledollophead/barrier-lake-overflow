@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>山水為證：堰塞湖快速評估系統架構報告 — OSSInt 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --terrain:#F2EFE6;
+    --paper:#FCFBF6;
+    --ink:#2C2A1E;
+    --muted:#6E6852;
+    --hairline:#D8D2BF;
+    --river:#1F6E8C;
+    --river-soft:#E2EEF2;
+    --contour:#9A6B35;
+    --hazard:#AE3A2C;
+    --hazard-soft:#F6E3DF;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Noto Serif TC',serif;
+    --sans:'Noto Sans TC',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--terrain);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.85;
+  }
+  a{color:var(--river);text-decoration:none;border-bottom:1px solid transparent}
+  a:hover,a:focus-visible{border-bottom-color:var(--river)}
+  a:focus-visible{outline:2px solid var(--river);outline-offset:2px}
+
+  /* ── Masthead：等高線圖幅角 ── */
+  .masthead{
+    position:relative;
+    border-bottom:2px solid var(--ink);
+    background:
+      repeating-radial-gradient(circle at 88% -30%, transparent 0 56px, rgba(154,107,53,.16) 56px 57.5px),
+      repeating-radial-gradient(circle at -8% 130%, transparent 0 74px, rgba(154,107,53,.10) 74px 75.5px),
+      var(--terrain);
+    overflow:hidden;
+  }
+  .masthead-inner{
+    max-width:920px;margin:0 auto;
+    padding:72px 28px 48px;
+    position:relative;
+  }
+  .sheet-corner{
+    font-family:var(--mono);
+    font-size:12px;letter-spacing:.08em;
+    color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    margin-bottom:40px;
+  }
+  .sheet-corner .fix{color:var(--river)}
+  h1{
+    font-family:var(--serif);font-weight:900;
+    font-size:clamp(32px,5.4vw,52px);
+    line-height:1.25;letter-spacing:.01em;
+  }
+  .subtitle{
+    font-family:var(--serif);font-weight:500;
+    font-size:clamp(17px,2.4vw,21px);
+    color:var(--muted);margin-top:14px;max-width:660px;
+  }
+  .meta-strip{
+    margin-top:36px;
+    display:flex;flex-wrap:wrap;gap:0;
+    border:1px solid var(--ink);
+    background:var(--paper);
+    font-size:13px;
+  }
+  .meta-strip div{
+    padding:10px 18px;flex:1 1 160px;
+    border-right:1px solid var(--hairline);
+  }
+  .meta-strip div:last-child{border-right:none}
+  .meta-strip .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);display:block}
+  .meta-strip .v{font-weight:700}
+
+  main{max-width:920px;margin:0 auto;padding:24px 28px 96px}
+  .toc{
+    background:var(--paper);
+    border:1px solid var(--hairline);
+    padding:22px 26px;margin:36px 0 12px;
+    font-size:14.5px;
+  }
+  .toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;columns:2;column-gap:36px}
+  .toc li{padding:3px 0;break-inside:avoid}
+  .toc .no{font-family:var(--mono);color:var(--river);margin-right:10px;font-size:12.5px}
+
+  section{margin-top:72px}
+  .sec-mark{
+    display:flex;align-items:center;gap:16px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:12px;margin-bottom:28px;
+  }
+  .bench{
+    font-family:var(--mono);font-weight:500;font-size:12.5px;
+    color:var(--river);
+    border:1.5px solid var(--river);
+    width:34px;height:34px;flex:0 0 34px;
+    transform:rotate(45deg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .bench span{transform:rotate(-45deg)}
+  h2{font-family:var(--serif);font-weight:700;font-size:27px;line-height:1.3}
+  h3{
+    font-family:var(--serif);font-weight:700;font-size:19px;
+    margin:34px 0 12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  h3::before{content:"";width:14px;height:2px;background:var(--river);flex:0 0 14px}
+  p{margin:12px 0;max-width:74ch}
+  strong{font-weight:700}
+  .lead{font-size:17.5px}
+
+  ul.plain{margin:12px 0 12px 2px;list-style:none}
+  ul.plain li{
+    padding:6px 0 6px 22px;position:relative;max-width:72ch;
+  }
+  ul.plain li::before{
+    content:"";position:absolute;left:2px;top:13px;
+    width:0;height:0;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+    border-bottom:9px solid var(--contour);
+  }
+
+  table{
+    width:100%;border-collapse:collapse;
+    background:var(--paper);
+    font-size:14.5px;line-height:1.65;
+    margin:18px 0;
+    border:1px solid var(--ink);
+  }
+  caption{
+    caption-side:top;text-align:left;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+    color:var(--muted);padding:0 0 8px 2px;
+  }
+  th{
+    font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.06em;
+    text-align:left;color:var(--ink);
+    background:var(--river-soft);
+    border-bottom:1.5px solid var(--river);
+    padding:9px 14px;
+  }
+  td{padding:10px 14px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td .m{font-family:var(--mono);font-size:12.8px}
+  .free{color:#2A7A3B;font-weight:700;white-space:nowrap}
+  .cond{color:var(--contour);font-weight:700;white-space:nowrap}
+
+  pre{
+    background:var(--ink);color:#EAE6D8;
+    font-family:var(--mono);font-size:13px;line-height:1.75;
+    padding:18px 22px;overflow-x:auto;
+    margin:16px 0;
+    border-left:4px solid var(--river);
+  }
+  code{font-family:var(--mono);font-size:.92em;background:var(--paper);border:1px solid var(--hairline);padding:1px 6px}
+  pre code{background:none;border:none;padding:0}
+  .cmt{color:#B0AA8F}
+
+  .note,.warn{
+    padding:16px 20px;margin:20px 0;max-width:78ch;
+    background:var(--paper);font-size:15px;
+  }
+  .note{border-left:4px solid var(--river);border-top:1px solid var(--hairline);border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+  .warn{border-left:4px solid var(--hazard);background:var(--hazard-soft)}
+  .note .tag,.warn .tag{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;display:block;margin-bottom:6px;
+  }
+  .note .tag{color:var(--river)}
+  .warn .tag{color:var(--hazard)}
+
+  .fig{
+    background:var(--paper);border:1px solid var(--ink);
+    padding:26px 22px 18px;margin:22px 0;
+  }
+  .fig-cap{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+    color:var(--muted);margin-top:12px;text-align:center;
+  }
+  svg{width:100%;height:auto;display:block}
+
+  .stage{
+    background:var(--paper);border:1px solid var(--hairline);
+    border-top:3px solid var(--ink);
+    padding:20px 24px;margin:16px 0;
+  }
+  .stage h4{
+    font-family:var(--mono);font-weight:500;font-size:12.5px;letter-spacing:.1em;
+    color:var(--river);margin-bottom:6px;
+  }
+  .stage .stage-title{font-family:var(--serif);font-weight:700;font-size:17.5px;margin-bottom:8px}
+
+  footer{
+    border-top:2px solid var(--ink);
+    background:var(--paper);
+  }
+  .footer-inner{
+    max-width:920px;margin:0 auto;padding:28px;
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  }
+  @media (max-width:640px){
+    .toc ol{columns:1}
+    .meta-strip div{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--hairline)}
+  }
+  @media print{
+    body{background:#fff}
+    .masthead{background:#fff}
+    pre{white-space:pre-wrap}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="sheet-corner">
+      <span>SHEET NO. OSSINT-2026-02</span>
+      <span class="fix">DATUM 馬太鞍溪堰塞湖 · 花蓮光復</span>
+      <span>INTERVAL: EVENT-DRIVEN</span>
+    </div>
+    <h1>山水為證<br>堰塞湖快速評估系統</h1>
+    <p class="subtitle">地震與豪雨觸發的衛星監測管線：從崩塌偵測、水體萃取到蓄水量估算與淹沒示警，在雲層之上為山區災害爭取黃金應變時間 — 系統架構與實作報告</p>
+    <div class="meta-strip">
+      <div><span class="k">競賽</span><span class="v">OSSInt 2026 黑客松</span></div>
+      <div><span class="k">賽道</span><span class="v">災害防救</span></div>
+      <div><span class="k">文件版本</span><span class="v">v0.1 草案</span></div>
+      <div><span class="k">日期</span><span class="v">2026-07-15</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc" aria-label="目錄">
+  <div class="toc-title">CONTENTS · 目錄</div>
+  <ol>
+    <li><span class="no">01</span><a href="#s1">問題背景與系統定位</a></li>
+    <li><span class="no">02</span><a href="#s2">系統總覽</a></li>
+    <li><span class="no">03</span><a href="#s3">資料層：來源與取得</a></li>
+    <li><span class="no">04</span><a href="#s4">觸發層：門檻與任務排程</a></li>
+    <li><span class="no">05</span><a href="#s5">偵測層：崩塌與水體</a></li>
+    <li><span class="no">06</span><a href="#s6">判定層：堰塞湖確認</a></li>
+    <li><span class="no">07</span><a href="#s7">量化層：蓄水量與壩體</a></li>
+    <li><span class="no">08</span><a href="#s8">影響層：淹沒模擬與暴露</a></li>
+    <li><span class="no">09</span><a href="#s9">應用層：CAP 示警與儀表板</a></li>
+    <li><span class="no">10</span><a href="#s10">驗證計畫：歷史事件回測</a></li>
+    <li><span class="no">11</span><a href="#s11">技術棧、算力與成本</a></li>
+    <li><span class="no">12</span><a href="#s12">開發時程與里程碑</a></li>
+  </ol>
+</nav>
+
+<!-- ══════════ 01 ══════════ -->
+<section id="s1">
+  <div class="sec-mark"><span class="bench"><span>01</span></span><h2>問題背景與系統定位</h2></div>
+  <p class="lead">2025 年 9 月，樺加沙颱風期間馬太鞍溪堰塞湖溢流，重創花蓮光復地區。這起事件暴露了台灣山區災害鏈的一個結構性缺口：地震與豪雨在深山造成的大規模崩塌可能堵河成湖，但從<strong>形成、發現、監測到溢流預警</strong>，目前高度依賴人力巡查與航拍——而災害發生時，往往正是道路中斷、直升機無法起飛的時候。</p>
+  <p>更關鍵的矛盾是：堰塞湖最常形成於颱風豪雨期間，此時<strong>光學衛星與航拍全被雲層遮蔽</strong>。合成孔徑雷達（SAR）穿透雲雨的能力，使衛星遙測成為極端天氣下唯一可靠的眼睛。</p>
+  <p>本系統的定位：<strong>事件觸發式的堰塞湖全自動評估管線</strong>。地震或豪雨達門檻即自動圈定高風險集水區、調度衛星影像，偵測新生崩塌與河道新增水體，以 DEM 量化蓄水量與壩體規模，模擬潰壩淹沒範圍與暴露人口，並以 CAP 標準格式輸出示警——從觸發到初步評估報告，目標在影像取得後 2 小時內完成。</p>
+  <div class="note">
+    <span class="tag">設計原則</span>
+    全系統以 100% 免費開放資料建構，主要流程可在單機執行；輸出直接採用災防示警標準格式（CAP），與 NCDR 既有示警體系無縫接軌——呼應競賽「成品必須能在現實環境運行」的核心精神。
+  </div>
+</section>
+
+<!-- ══════════ 02 ══════════ -->
+<section id="s2">
+  <div class="sec-mark"><span class="bench"><span>02</span></span><h2>系統總覽</h2></div>
+  <p>與持續監測型系統不同，本系統採<strong>事件觸發式</strong>架構：平時僅維持輕量的觸發監聽，事件發生後才啟動完整管線。這讓運算成本極低（筆電可跑大部分流程），也符合堰塞湖「事件驅動」的災害本質。</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 860 388" role="img" aria-label="事件觸發式六階段資料流圖">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#6E6852" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+      <g font-family="'Noto Sans TC',sans-serif" font-size="14">
+        <!-- trigger row -->
+        <rect x="20" y="20" width="200" height="52" fill="#E2EEF2" stroke="#1F6E8C" stroke-width="1"/>
+        <text x="120" y="42" text-anchor="middle" font-weight="700" fill="#2C2A1E">觸發監聽</text>
+        <text x="120" y="61" text-anchor="middle" font-size="12" fill="#6E6852">CWA 地震 · 豪雨門檻</text>
+
+        <line x1="220" y1="46" x2="288" y2="46" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <rect x="292" y="20" width="200" height="52" fill="#E2EEF2" stroke="#1F6E8C" stroke-width="1"/>
+        <text x="392" y="42" text-anchor="middle" font-weight="700" fill="#2C2A1E">圈定集水區</text>
+        <text x="392" y="61" text-anchor="middle" font-size="12" fill="#6E6852">潛勢圖層 × 震度 / 雨量</text>
+
+        <line x1="492" y1="46" x2="560" y2="46" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <rect x="564" y="20" width="200" height="52" fill="#E2EEF2" stroke="#1F6E8C" stroke-width="1"/>
+        <text x="664" y="42" text-anchor="middle" font-weight="700" fill="#2C2A1E">影像調度</text>
+        <text x="664" y="61" text-anchor="middle" font-size="12" fill="#6E6852">Sentinel-1 SAR · 光學</text>
+
+        <path d="M664 72 L664 100 L120 100 L120 126" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M664 72 L664 100 L392 100 L392 126" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- detect row -->
+        <rect x="20" y="130" width="200" height="52" fill="#FCFBF6" stroke="#2C2A1E" stroke-width="1"/>
+        <text x="120" y="152" text-anchor="middle" font-weight="700" fill="#2C2A1E">崩塌變化偵測</text>
+        <text x="120" y="171" text-anchor="middle" font-size="12" fill="#6E6852">相干性 · 振幅比值</text>
+
+        <rect x="292" y="130" width="200" height="52" fill="#FCFBF6" stroke="#2C2A1E" stroke-width="1"/>
+        <text x="392" y="152" text-anchor="middle" font-weight="700" fill="#2C2A1E">水體萃取</text>
+        <text x="392" y="171" text-anchor="middle" font-size="12" fill="#6E6852">SAR 低回波 · NDWI</text>
+
+        <rect x="564" y="130" width="200" height="52" fill="#E2EEF2" stroke="#1F6E8C" stroke-width="1"/>
+        <text x="664" y="152" text-anchor="middle" font-weight="700" fill="#2C2A1E">河川圖資</text>
+        <text x="664" y="171" text-anchor="middle" font-size="12" fill="#6E6852">水利署 · 集水區</text>
+
+        <path d="M120 182 L120 206 L330 206 L330 232" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M392 182 L392 206 L370 206 L370 232" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M664 182 L664 260 L494 260" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- assess row -->
+        <rect x="230" y="236" width="260" height="52" fill="#FCFBF6" stroke="#2C2A1E" stroke-width="1.5"/>
+        <text x="360" y="258" text-anchor="middle" font-weight="700" fill="#2C2A1E">堰塞湖判定 → 量化評估</text>
+        <text x="360" y="277" text-anchor="middle" font-size="12" fill="#6E6852">DEM 蓄水量 · 壩高 · 溢流風險</text>
+
+        <path d="M360 288 L360 316" fill="none" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- output row -->
+        <rect x="120" y="320" width="240" height="52" fill="#FCFBF6" stroke="#2C2A1E" stroke-width="1"/>
+        <text x="240" y="342" text-anchor="middle" font-weight="700" fill="#2C2A1E">淹沒模擬 × 人口暴露</text>
+        <text x="240" y="361" text-anchor="middle" font-size="12" fill="#6E6852">bathtub model · SEGIS</text>
+
+        <line x1="360" y1="346" x2="428" y2="346" stroke="#6E6852" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <rect x="432" y="320" width="150" height="52" fill="#2C2A1E"/>
+        <text x="507" y="342" text-anchor="middle" font-weight="700" fill="#FCFBF6">CAP 示警</text>
+        <text x="507" y="361" text-anchor="middle" font-size="12" fill="#D8D2BF">儀表板 · NCDR</text>
+      </g>
+    </svg>
+    <div class="fig-cap">FIG. 1 — 事件觸發式管線：藍框為觸發與資料模組，白框為分析模組</div>
+  </div>
+
+  <p>兩個關鍵設計取捨：</p>
+  <ul class="plain">
+    <li><strong>SAR 為主、光學為輔。</strong>颱風與鋒面期間光學影像近乎不可用；管線以 Sentinel-1 為主幹確保全天候能力，Sentinel-2 與福衛在雲隙時提供高信心確認。</li>
+    <li><strong>保守快估優於精確慢算。</strong>淹沒模擬先以 DEM 填洼的 bathtub model 在分鐘級產出保守估計並明確標註方法限制；完整水動力模擬（HEC-RAS）列為輔導期升級項目。災防決策要的是「兩小時內的可靠下限」，不是「兩天後的精確值」。</li>
+  </ul>
+</section>
+
+<!-- ══════════ 03 ══════════ -->
+<section id="s3">
+  <div class="sec-mark"><span class="bench"><span>03</span></span><h2>資料層：來源與取得</h2></div>
+
+  <table>
+    <caption>TABLE 1 — 資料源清單（全數免費開放）</caption>
+    <thead><tr><th>資料</th><th>來源與取得方式</th><th>角色</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>地震報告</strong></td>
+        <td>CWA 開放資料平台 API（顯著有感地震報告，含各測站震度）</td>
+        <td>觸發</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>雨量觀測 / QPE</strong></td>
+        <td>CWA 自動雨量站 + 定量降水估計網格</td>
+        <td>觸發</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>Sentinel-1 SAR</strong><br><span class="m">IW GRD + SLC</span></td>
+        <td>Copernicus Data Space Ecosystem，STAC / OData API；台灣約每 6 天覆蓋</td>
+        <td>主偵測</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>Sentinel-2 光學</strong></td>
+        <td>CDSE，10 m 解析度，5 天重訪（雲隙時使用）</td>
+        <td>輔助確認</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>DEM 20 m</strong></td>
+        <td>內政部，政府資料開放平台直接下載（全台）</td>
+        <td>量化核心</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>河川與集水區圖資</strong></td>
+        <td>水利署河川圖籍、集水區界；NLSC 圖資服務雲 WMTS</td>
+        <td>判定</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>災害潛勢圖層</strong></td>
+        <td>農村水保署土石流潛勢溪流、地礦中心山崩與地滑敏感區</td>
+        <td>先驗風險</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>人口與設施</strong></td>
+        <td>SEGIS 人口統計格網（最細至村里 / 網格）、NLSC 道路與建物</td>
+        <td>暴露評估</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>示警通道</strong></td>
+        <td>NCDR 災害示警公開資料平台（CAP 格式規範）</td>
+        <td>輸出介接</td>
+        <td class="free">開放</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <span class="tag">與暗船案的關鍵差異</span>
+    本案不存在任何授權灰色地帶或付費資料——從觸發、偵測、量化到輸出，每一層都是無條件開放的官方資料。「100% 開源資料」可以直接寫進提案書首頁。
+  </div>
+</section>
+
+<!-- ══════════ 04 ══════════ -->
+<section id="s4">
+  <div class="sec-mark"><span class="bench"><span>04</span></span><h2>觸發層：門檻與任務排程</h2></div>
+  <p>觸發監聽是常駐的輕量服務（cron 每 10 分鐘輪詢 CWA API），命中門檻即建立「監測任務」：</p>
+  <pre><code><span class="cmt"># 觸發規則 v1（回測後校準）</span>
+地震觸發:  規模 ≥ 5.5 且任一山區測站震度 ≥ 5弱
+           → 圈定震央 30 km 內、坡度 > 30° 的集水區
+豪雨觸發:  山區時雨量 ≥ 80 mm 或 24h 累積 ≥ 350 mm
+           → 圈定達標雨量站所屬集水區
+複合加權:  地震後 30 天內遇豪雨 → 門檻下修 20%
+           <span class="cmt">（震後坡體鬆動，正是馬太鞍溪型事件的成因鏈）</span></code></pre>
+  <p>圈定的集水區與<strong>先驗風險圖層</strong>（土石流潛勢溪流、山崩敏感區）疊合排序，決定影像處理的優先順序。任務建立後自動向 CDSE 查詢：事件後第一景可用的 Sentinel-1（含已排程的未來過境時刻，供指揮人員預期「下次衛星幾點經過」），以及事件前最近一景無雲基準影像。</p>
+</section>
+
+<!-- ══════════ 05 ══════════ -->
+<section id="s5">
+  <div class="sec-mark"><span class="bench"><span>05</span></span><h2>偵測層：崩塌與水體</h2></div>
+
+  <div class="stage">
+    <h4>TRACK A — 崩塌偵測</h4>
+    <div class="stage-title">SAR 變化偵測（事件前後影像對）</div>
+    <p><strong>振幅比值法（主力，GRD 即可）</strong>：事件前後 σ⁰ 影像做對數比值，大面積裸露坡面呈顯著變化；以坡度 &gt; 20° 遮罩排除平地誤判。<strong>相干性變化法（升級，需 SLC）</strong>：震前-震前 vs 震前-震後兩組干涉相干性差值，對植被區新生崩塌極敏感，但 SLC 處理量大、留待 TWCC 上跑。光學可用時以裸土指標（NDVI 驟降）交叉確認。</p>
+  </div>
+
+  <div class="stage">
+    <h4>TRACK B — 水體萃取</h4>
+    <div class="stage-title">SAR 低回波 + 光學 NDWI 雙軌</div>
+    <p>平靜水面對雷達是鏡面反射，回波極低：對 VV 通道以 Otsu 自動門檻切出水體，再以最小面積（&gt; 0.5 ha）與形狀規則過濾。光學可用時以 NDWI（歸一化差異水體指數）&gt; 0.2 萃取，精度更高。<strong>關鍵輸出是「新增水體」</strong>：事件後水體 − 事件前基準水體 − 既有水庫埤塘資料庫。</p>
+  </div>
+
+  <div class="warn">
+    <span class="tag">已知誤判源</span>
+    山區 SAR 的雷達陰影（layover / shadow）在陡峭地形會呈低回波、貌似水體——必須以 DEM 計算局部入射角，將陰影區預先遮罩。這是山區水體萃取最大的坑，回測時重點檢驗。
+  </div>
+</section>
+
+<!-- ══════════ 06 ══════════ -->
+<section id="s6">
+  <div class="sec-mark"><span class="bench"><span>06</span></span><h2>判定層：堰塞湖確認</h2></div>
+  <p>崩塌候選與新增水體進入規則式判定，全部條件可解釋、可調參：</p>
+  <pre><code><span class="cmt"># 堰塞湖候選判定（全部成立才升級為「確認事件」）</span>
+1. 新增水體與河道線相交，且沿河道向上游延伸
+2. 水體下游端 2 km 內存在崩塌候選（壩體來源）
+3. 水體位於觸發任務圈定的集水區內
+4. 多時相持續性：下一景影像中水體仍在或擴大
+   <span class="cmt">（單景出現、下景消失 → 降級為待觀察）</span></code></pre>
+  <p>每個候選產生信心分級：<strong>A 級</strong>（SAR + 光學雙重確認）、<strong>B 級</strong>（僅 SAR、多時相確認）、<strong>C 級</strong>（單景待觀察）。分級直接對應示警的發布層級，避免單景誤判造成狼來了效應。</p>
+</section>
+
+<!-- ══════════ 07 ══════════ -->
+<section id="s7">
+  <div class="sec-mark"><span class="bench"><span>07</span></span><h2>量化層：蓄水量與壩體</h2></div>
+  <p>這是全系統的技術核心：只靠衛星量到的水面範圍 + 事前 DEM，推估決策者最想知道的三個數字。</p>
+  <ul class="plain">
+    <li><strong>水位反演</strong> — 水面多邊形邊界與 DEM 相交，取邊界高程中位數為當前水位（邊界像元的高程理論上等於水面高程）。</li>
+    <li><strong>蓄水量</strong> — 對壩址上游河谷以 DEM 建立水位–面積–體積曲線（hypsometric curve），代入反演水位得蓄水量；同時輸出「水位每升 5 m 的增量體積」供持續監測。</li>
+    <li><strong>壩體幾何</strong> — 壩高 ≈ 反演水位 − 壩址原河床高程（事前 DEM）；壩寬取崩塌體跨河段長度。</li>
+    <li><strong>溢流風險指標</strong> — 採用堰塞湖穩定性經驗指標（如 DBI：以壩高、壩體積、集水面積組合），搭配上游即時雨量估算入流，推估「多久蓄滿至壩頂」。</li>
+  </ul>
+  <p>所有估算連同不確定性區間輸出（DEM 為事件前地形、崩塌可能改變河床，故蓄水量給區間而非單值）——對災防決策者，誠實的區間遠比虛假的精確有用。</p>
+</section>
+
+<!-- ══════════ 08 ══════════ -->
+<section id="s8">
+  <div class="sec-mark"><span class="bench"><span>08</span></span><h2>影響層：淹沒模擬與暴露評估</h2></div>
+  <ul class="plain">
+    <li><strong>淹沒範圍（快估）</strong> — bathtub model：假設瞬時全潰、蓄水量沿下游河谷以 DEM 填洼展開，分鐘級產出保守淹沒範圍；輔導期升級為簡化一維水動力演算（洪峰衰減沿程計算）。</li>
+    <li><strong>暴露疊加</strong> — 淹沒多邊形 × SEGIS 人口格網 → 暴露人口；× NLSC 道路 → 中斷路段與<strong>孤島化聚落</strong>（對外道路全數落於淹沒範圍的聚落，馬太鞍溪事件中最痛的教訓之一）。</li>
+    <li><strong>應變資訊</strong> — 淹沒範圍外最近的避難收容處所、直升機可降落開闊地（坡度 &lt; 5° 且面積達標的空地）。</li>
+  </ul>
+</section>
+
+<!-- ══════════ 09 ══════════ -->
+<section id="s9">
+  <div class="sec-mark"><span class="bench"><span>09</span></span><h2>應用層：CAP 示警與儀表板</h2></div>
+  <ul class="plain">
+    <li><strong>CAP 輸出</strong> — 每個確認事件自動產生 CAP 1.2 格式示警（含事件位置、信心分級、蓄水量區間、預估影響範圍多邊形），格式完全依循 NCDR 災害示警平台規範——demo 時可展示「本系統的輸出可直接進入國家示警體系」。</li>
+    <li><strong>指揮儀表板</strong>（MapLibre GL）— 3D 地形上疊崩塌區、湖面範圍時序、淹沒模擬動畫、暴露統計卡片；每個數字可點開追溯至來源影像與計算參數。</li>
+    <li><strong>監測報告</strong> — 每景新影像處理完自動產出 PDF 簡報（湖面變化、水位趨勢、風險指標更新），模擬應變中心的實際作業節奏。</li>
+  </ul>
+</section>
+
+<!-- ══════════ 10 ══════════ -->
+<section id="s10">
+  <div class="sec-mark"><span class="bench"><span>10</span></span><h2>驗證計畫：歷史事件回測</h2></div>
+  <p>兩起近年重大事件提供完整的端到端驗證素材：</p>
+  <table>
+    <caption>TABLE 2 — 回測事件</caption>
+    <thead><tr><th>事件</th><th>時間 / 地點</th><th>驗證目標</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>馬太鞍溪堰塞湖</strong><br><span class="m">主驗證案例</span></td>
+        <td>2025-07 形成 · 2025-09 溢流<br>花蓮 光復</td>
+        <td>全管線回放：形成期偵測時點 vs 實際發現時點；蓄水量估算 vs 官方公布值；淹沒快估 vs 實際災損範圍；溢流前系統可提供的預警提前量</td>
+      </tr>
+      <tr>
+        <td><strong>0403 花蓮地震</strong><br><span class="m">崩塌偵測驗證</span></td>
+        <td>2024-04-03 · 規模 7.2<br>花蓮 太魯閣一帶</td>
+        <td>震後大量崩塌的偵測召回率（對照政府公布的崩塌判釋圖）；觸發規則於本事件是否正確啟動並圈定正確集水區</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>評估指標：偵測提前量（系統首次標定 vs 新聞/官方首次通報）、蓄水量誤差率、淹沒範圍 IoU（對照實際災損判釋）、誤報率（回測期間非事件區的假警報數）。回測揭露的每個誤差都回饋至門檻與權重校準，並如實寫入報告——展示工程迭代而非完美假象。</p>
+</section>
+
+<!-- ══════════ 11 ══════════ -->
+<section id="s11">
+  <div class="sec-mark"><span class="bench"><span>11</span></span><h2>技術棧、算力與成本</h2></div>
+  <table>
+    <caption>TABLE 3 — 技術棧與成本</caption>
+    <thead><tr><th>層級</th><th>選型</th><th>成本</th></tr></thead>
+    <tbody>
+      <tr><td>觸發服務</td><td><span class="m">Python · APScheduler · CWA API</span></td><td class="free">$0</td></tr>
+      <tr><td>影像處理</td><td><span class="m">SNAP/snappy · GDAL · rasterio · scikit-image</span></td><td class="free">$0</td></tr>
+      <tr><td>地形分析</td><td><span class="m">richdem / WhiteboxTools（填洼、集水區、坡度）</span></td><td class="free">$0</td></tr>
+      <tr><td>空間資料庫</td><td><span class="m">PostGIS</span></td><td class="free">$0</td></tr>
+      <tr><td>後端 / 排程</td><td><span class="m">FastAPI · Celery · Docker Compose</span></td><td class="free">$0</td></tr>
+      <tr><td>前端地圖</td><td><span class="m">MapLibre GL（3D terrain）· deck.gl</span></td><td class="free">$0</td></tr>
+      <tr><td>算力</td><td>筆電可跑主流程；SLC 相干性與大範圍回測用 NCHC TWCC</td><td class="cond">TWCC 待確認</td></tr>
+    </tbody>
+  </table>
+  <p>總計：<strong>零現金成本、零授權門檻</strong>。事件觸發式架構讓日常運轉負擔趨近於零，單一事件的完整分析在一般工作站約 30–60 分鐘。</p>
+</section>
+
+<!-- ══════════ 12 ══════════ -->
+<section id="s12">
+  <div class="sec-mark"><span class="bench"><span>12</span></span><h2>開發時程與里程碑</h2></div>
+  <table>
+    <caption>TABLE 4 — 對齊競賽時程（提案截止 2026-09-10 · 輔導期 09-22 至 11-06 · 決選 11 月）</caption>
+    <thead><tr><th>期間</th><th>里程碑</th><th>交付物</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m">07 下旬</span></td><td>參加線上說明會；備齊 DEM、河川、潛勢、SEGIS 靜態圖層</td><td>基礎圖資庫</td></tr>
+      <tr><td><span class="m">08 上旬</span></td><td>觸發服務 + CDSE 影像調度 + SAR 前處理批次化</td><td>觸發到影像的自動鏈</td></tr>
+      <tr><td><span class="m">08 中旬</span></td><td>水體萃取 + 崩塌振幅比值偵測 + 陰影遮罩</td><td>馬太鞍溪形成期首次偵測回放</td></tr>
+      <tr><td><span class="m">08 下旬</span></td><td>DEM 量化模組（水位反演、蓄水量、壩高）+ bathtub 淹沒快估</td><td>蓄水量估算 vs 官方值比對</td></tr>
+      <tr><td><span class="m">09 上旬</span></td><td>撰寫提案書（含回測證據）；<strong>09-10 截止投件</strong></td><td>提案書</td></tr>
+      <tr><td><span class="m">輔導期</span></td><td>相干性偵測升級、一維水動力模擬、CAP 介接、儀表板完整化、0403 回測</td><td>決賽成品</td></tr>
+      <tr><td><span class="m">11 月</span></td><td>決選簡報：馬太鞍溪事件全程回放 live demo</td><td>簡報 + 展示</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="tag">風險備援</span>
+    每個模組獨立成立：即使只完成「觸發 → 水體萃取 → 蓄水量估算」，也已是一個可展示、有真實驗證的最小可行系統；淹沒模擬與相干性偵測是逐層加分項，不構成單點失敗。
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>OSSINT 2026 · 山水為證 BARRIER LAKE WATCH</span>
+    <span>DRAFT v0.1 · 2026-07-15 · 內部工作文件</span>
+  </div>
+</footer>
+
+</body>
+</html>

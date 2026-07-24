@@ -1,4 +1,5 @@
-/* 由 tools/csv_to_js.py 自 data/taiwan-barrier-lakes.csv 產生，請勿手動編輯。
+/* 由 pipeline/ingest/inventory.py 產生，並由 pipeline/attribution/annotate.py 加註敘述。
+   請勿手動編輯。
    資料來源：農業部農村發展及水土保持署 堰塞湖清冊
    https://tech.ardswc.gov.tw/Results/BarrierLakeInfo
    座標已由 TWD97 TM2 轉為 WGS84。 */
@@ -25,7 +26,14 @@ window.BARRIER_LAKES = [
   "statusKey": "watch",
   "setting": "山坡地",
   "lon": 120.69867,
-  "lat": 23.66271
+  "lat": 23.66271,
+  "narrative": "本堰塞湖形成於0612-0613連日降雨期間，觸發發生於加走寮溪，瑞龍瀑布園區崩塌，堵塞加走寮溪，形成蓄水量約 10 萬立方公尺之小型堰塞湖，現況列為監測中。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.monitoring.text"
+  ]
  },
  {
   "id": "bl073",
@@ -48,7 +56,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.24971,
-  "lat": 24.16209
+  "lat": 24.16209,
+  "narrative": "本堰塞湖形成於4/7連日降雨期間，觸發合歡溪步道大約3.5公里處(大甲溪事業區第82林班)崩塌，堵塞合歡溪，形成蓄水量約 4 萬立方公尺之小型堰塞湖，存續 56 日（約 8 週） 後因溢流沖刷潰決。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.with_cause"
+  ]
  },
  {
   "id": "bl075",
@@ -71,7 +86,14 @@ window.BARRIER_LAKES = [
   "statusKey": "watch",
   "setting": "林班地",
   "lon": 121.26957,
-  "lat": 23.79204
+  "lat": 23.79204,
+  "narrative": "本堰塞湖係由萬榮村邊坡崩塌所形成，觸發萬榮村崩塌，堵塞萬里溪，蓄水量未登載或規模極小，現況列為監測中。",
+  "rulesFired": [
+   "trigger.slide_only.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.monitoring.text"
+  ]
  },
  {
   "id": "bl071",
@@ -94,7 +116,14 @@ window.BARRIER_LAKES = [
   "statusKey": "watch",
   "setting": "林班地",
   "lon": 121.29752,
-  "lat": 23.70061
+  "lat": 23.70061,
+  "narrative": "本堰塞湖形成於薇帕颱風影響期間，觸發林田山第118林班崩塌，堵塞馬太鞍溪，形成蓄水量約 9,100 萬立方公尺之極大型堰塞湖，自形成迄今 64 日（約 2.1 個月），現況列為監測中。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.monitoring.with_duration"
+  ]
  },
  {
   "id": "bl070",
@@ -117,7 +146,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.66859,
-  "lat": 23.57874
+  "lat": 23.57874,
+  "narrative": "本堰塞湖形成於丹娜絲颱風影響期間，觸發草嶺村崩塌，堵塞清水溪，形成蓄水量約 1,400 萬立方公尺之大型堰塞湖，於 2025/07/10 因溢流沖刷潰決，存續 2 日。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.full"
+  ]
  },
  {
   "id": "bl072",
@@ -140,7 +176,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.55913,
-  "lat": 24.17315
+  "lat": 24.17315,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發燕子口、立霧溪第20林班崩塌，堵塞立霧溪，形成蓄水量約 190 萬立方公尺之中型堰塞湖，於 2025/10/26 因人為機具開挖潰決，存續 9 日。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.full"
+  ]
  },
  {
   "id": "bl069",
@@ -163,7 +206,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.1592,
-  "lat": 23.38086
+  "lat": 23.38086,
+  "narrative": "本堰塞湖之形成與0121地震相關，觸發秀姑巒第8林班崩塌，堵塞樂樂溪，形成蓄水量約 8.6 萬立方公尺之小型堰塞湖，於 2025/06/17 潰決，存續 143 日（約 4.7 個月）。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.with_date"
+  ]
  },
  {
   "id": "bl065",
@@ -186,7 +236,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.293,
-  "lat": 23.77814
+  "lat": 23.77814,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發林田山第78林班崩塌，堵塞萬里溪，形成蓄水量約 55 萬立方公尺之小型堰塞湖，存續 134 日（約 4.4 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl066",
@@ -209,7 +266,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.37851,
-  "lat": 24.00896
+  "lat": 24.00896,
+  "narrative": "本堰塞湖之形成與地震相關，觸發木瓜山57林班崩塌，堵塞木瓜溪，形成蓄水量約 43 萬立方公尺之小型堰塞湖，存續 107 日（約 3.5 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl068",
@@ -232,7 +296,14 @@ window.BARRIER_LAKES = [
   "statusKey": "watch",
   "setting": "林班地",
   "lon": 121.34463,
-  "lat": 24.56425
+  "lat": 24.56425,
+  "narrative": "本堰塞湖形成於康芮颱風影響期間，觸發大溪第114林班崩塌，堵塞泰崗溪，形成蓄水量約 27 萬立方公尺之小型堰塞湖，自形成迄今 持續至今，現況列為監測中。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.monitoring.with_duration"
+  ]
  },
  {
   "id": "bl067",
@@ -255,7 +326,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.67236,
-  "lat": 22.37236
+  "lat": 22.37236,
+  "narrative": "本堰塞湖形成於山陀兒颱風影響期間，觸發士文村崩塌，堵塞率芒溪，形成蓄水量約 3.7 萬立方公尺之小型堰塞湖，存續 9 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl064",
@@ -278,7 +356,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.05426,
-  "lat": 23.16209
+  "lat": 23.16209,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發關山第13林班與山坡地交界崩塌，堵塞新武呂溪，形成蓄水量約 8.6 萬立方公尺之小型堰塞湖，存續 243 日（約 8.0 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl061",
@@ -301,7 +386,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.95323,
-  "lat": 22.72525
+  "lat": 22.72525,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發台東第27林班崩塌，堵塞大南溪，形成蓄水量約 170 萬立方公尺之中型堰塞湖，存續 251 日（約 8.2 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl063",
@@ -324,7 +416,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.25644,
-  "lat": 23.4965
+  "lat": 23.4965,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發玉里第27林班崩塌，堵塞豐坪溪，形成蓄水量約 7.5 萬立方公尺之小型堰塞湖，存續 633 日（約 1.7 年） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl062",
@@ -347,7 +446,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.4044,
-  "lat": 24.67563
+  "lat": 24.67563,
+  "narrative": "本堰塞湖形成於110年0621豪雨期間，觸發大溪第35林班崩塌，堵塞大曼溪，形成蓄水量約 1.5 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl060",
@@ -370,7 +476,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.7682,
-  "lat": 24.21974
+  "lat": 24.21974,
+  "narrative": "本堰塞湖形成於米塔颱風影響期間，觸發八仙山第132林班崩塌，堵塞烏牛欄溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl059",
@@ -393,7 +506,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.44778,
-  "lat": 24.56809
+  "lat": 24.56809,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發太平山第30林班崩塌，堵塞石頭溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl058",
@@ -416,7 +536,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.75151,
-  "lat": 23.70828
+  "lat": 23.70828,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發竹豐村崩塌，堵塞東埔蚋溪，蓄水量未登載或規模極小，存續 1 日 後潰決。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl054",
@@ -439,7 +566,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.37322,
-  "lat": 24.8075
+  "lat": 24.8075,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發霞雲里崩塌，堵塞霞雲溪，形成蓄水量約 0.27 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl057",
@@ -462,7 +596,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.37434,
-  "lat": 23.73653
+  "lat": 23.73653,
+  "narrative": "本堰塞湖之形成與高雄美濃地震相關，觸發林田山第112林班崩塌，堵塞萬里溪，形成蓄水量約 0.25 萬立方公尺之小型堰塞湖，存續 133 日（約 4.4 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl053",
@@ -485,7 +626,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.55162,
-  "lat": 24.17193
+  "lat": 24.17193,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發中橫公路臺8線176.3k、立霧溪第20林班崩塌，堵塞立霧溪，蓄水量未登載或規模極小，存續 175 日（約 5.7 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl055",
@@ -508,7 +656,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.9183,
-  "lat": 22.8495
+  "lat": 22.8495,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發延平第35林班崩塌，堵塞鹿野溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl056",
@@ -531,7 +686,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.22889,
-  "lat": 22.94524
+  "lat": 22.94524,
+  "narrative": "本堰塞湖形成於尼伯特颱風影響期間，觸發尚德村崩塌，堵塞泰源南溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl052",
@@ -554,7 +716,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.42685,
-  "lat": 24.16742
+  "lat": 24.16742,
+  "narrative": "本堰塞湖形成於蘇迪勒颱風影響期間，觸發六十四、七十七林班地交界處崩塌，堵塞塔次基里溪，形成蓄水量約 11 萬立方公尺之小型堰塞湖，存續 40 日（約 6 週） 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl051",
@@ -577,7 +746,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.51907,
-  "lat": 24.81997
+  "lat": 24.81997,
+  "narrative": "本堰塞湖形成於蘇迪勒颱風影響期間，形成蓄水量約 0.60 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl049",
@@ -600,7 +775,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.11281,
-  "lat": 23.73651
+  "lat": 23.73651,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發丹大第17林班崩塌，堵塞郡大溪，形成蓄水量約 13 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl048",
@@ -623,7 +805,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.0598,
-  "lat": 23.57147
+  "lat": 23.57147,
+  "narrative": "本堰塞湖形成於颱風影響期間，觸發巒大第205林班崩塌，堵塞哈伊拉羅溪，形成蓄水量約 6 萬立方公尺之小型堰塞湖，存續 93 日（約 3.1 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl047",
@@ -646,7 +835,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.47582,
-  "lat": 24.1901
+  "lat": 24.1901,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發立霧溪第54林班崩塌，堵塞瓦黑爾溪，形成蓄水量約 0.95 萬立方公尺之小型堰塞湖，存續 135 日（約 4.4 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl050",
@@ -669,7 +865,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.92792,
-  "lat": 22.89709
+  "lat": 22.89709,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發鹿野溪上游北絲鬮溪(延平第35林班)崩塌，堵塞鹿野溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl045",
@@ -692,7 +895,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.80376,
-  "lat": 23.73177
+  "lat": 23.73177,
+  "narrative": "本堰塞湖之形成與2013年0602地震相關，觸發鳳凰谷瀑谷上游300公尺崩塌，堵塞南清水溝溪，形成蓄水量約 1 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl046",
@@ -715,7 +925,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.79852,
-  "lat": 23.73538
+  "lat": 23.73538,
+  "narrative": "本堰塞湖之形成與2013年0602地震相關，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl042",
@@ -738,7 +954,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.87249,
-  "lat": 23.56753
+  "lat": 23.56753,
+  "narrative": "本堰塞湖形成於2012年0610豪雨期間，觸發頭坑溪，隆華橋上游700公尺崩塌，堵塞和社溪，形成蓄水量約 6 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl041",
@@ -761,7 +984,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.79101,
-  "lat": 23.19539
+  "lat": 23.19539,
+  "narrative": "本堰塞湖形成於2012年0610豪雨期間，觸發桃源里崩塌，堵塞唐布那斯溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl043",
@@ -784,7 +1014,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.11345,
-  "lat": 24.00914
+  "lat": 24.00914,
+  "narrative": "本堰塞湖形成於2012年0610豪雨期間，蓄水量未登載或規模極小，存續 約 1 小時 後潰決。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl044",
@@ -807,7 +1043,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.72861,
-  "lat": 23.2936
+  "lat": 23.2936,
+  "narrative": "本堰塞湖形成於泰利颱風影響期間，觸發達卡努瓦里崩塌，堵塞旗山溪一溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl040",
@@ -830,7 +1073,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 121.11151,
-  "lat": 24.59214
+  "lat": 24.59214,
+  "narrative": "本堰塞湖係由桃山村邊坡崩塌所形成，蓄水量未登載或規模極小，存續 1 日 後潰決。",
+  "rulesFired": [
+   "trigger.slide_only.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl023",
@@ -853,7 +1102,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.79107,
-  "lat": 23.19377
+  "lat": 23.19377,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發勤和里崩塌，堵塞唐布那斯溪，形成蓄水量約 70 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl038",
@@ -876,7 +1132,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.64501,
-  "lat": 23.16759
+  "lat": 23.16759,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發小林村; (旗山第21林班)崩塌，堵塞旗山溪，形成蓄水量約 1,000 萬立方公尺之大型堰塞湖，存續 約 1.5 小時 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl021",
@@ -899,7 +1162,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.81918,
-  "lat": 22.57959
+  "lat": 22.57959,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發包盛社、大武第9林班崩塌，堵塞太麻里溪，形成蓄水量約 533 萬立方公尺之中型堰塞湖，存續 433 日（約 1.2 年） 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl039",
@@ -922,7 +1192,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.74564,
-  "lat": 23.32087
+  "lat": 23.32087,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發那瑪夏民生村上游七公里處;(那瑪夏鄉；旗山第16林班)崩塌，堵塞旗山溪，形成蓄水量約 157 萬立方公尺之中型堰塞湖，存續 730 日（約 2.0 年） 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl020",
@@ -945,7 +1222,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.69942,
-  "lat": 22.39351
+  "lat": 22.39351,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發潮州第20林班崩塌，堵塞士文溪，形成蓄水量約 122 萬立方公尺之中型堰塞湖，存續 437 日（約 1.2 年） 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl027",
@@ -968,7 +1252,14 @@ window.BARRIER_LAKES = [
   "statusKey": "stable",
   "setting": "林班地",
   "lon": 120.84098,
-  "lat": 23.22634
+  "lat": 23.22634,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發梅蘭村；荖濃溪第114林班崩塌，堵塞拉克斯溪，形成蓄水量約 74 萬立方公尺之小型堰塞湖，自形成迄今 持續至今，現況為存在且已穩定。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.stable.with_duration"
+  ]
  },
  {
   "id": "bl036",
@@ -991,7 +1282,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.48308,
-  "lat": 24.23206
+  "lat": 24.23206,
+  "narrative": "本堰塞湖係由太魯閣梅園竹村步道2.9公里處溪谷; 立霧溪第46林班邊坡崩塌所形成，觸發太魯閣梅園竹村步道2.9公里處溪谷; 立霧溪第46林班崩塌，堵塞陶賽溪，形成蓄水量約 20 萬立方公尺之小型堰塞湖，存續 2 日 後潰決。",
+  "rulesFired": [
+   "trigger.slide_only.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl022",
@@ -1014,7 +1312,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.44647,
-  "lat": 23.99448
+  "lat": 23.99448,
+  "narrative": "本堰塞湖之形成與地震相關，觸發木瓜山第19林班崩塌，堵塞木瓜溪，形成蓄水量約 11 萬立方公尺之小型堰塞湖，存續 193 日（約 6.3 個月） 後潰決。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl019",
@@ -1037,7 +1342,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.6928,
-  "lat": 22.82011
+  "lat": 22.82011,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發大社村崩塌，堵塞口社溪，蓄水量未登載或規模極小，存續 4 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl024",
@@ -1060,7 +1372,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.79483,
-  "lat": 22.17778
+  "lat": 22.17778,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發牡丹村、恆春第16林班崩塌，堵塞汝仍溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl025",
@@ -1083,7 +1402,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.83947,
-  "lat": 23.49648
+  "lat": 23.49648,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發神木村崩塌，堵塞和社溪，蓄水量未登載或規模極小，存續 不足 24 小時 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl026",
@@ -1106,7 +1432,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.86431,
-  "lat": 23.56337
+  "lat": 23.56337,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發神木村崩塌，堵塞和社溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl028",
@@ -1129,7 +1462,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.70633,
-  "lat": 23.5331
+  "lat": 23.5331,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl029",
@@ -1152,7 +1491,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.81154,
-  "lat": 23.26846
+  "lat": 23.26846,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發梅山口；旗山第77林班崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，存續 3 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl030",
@@ -1175,7 +1521,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.68995,
-  "lat": 23.10277
+  "lat": 23.10277,
+  "narrative": "本堰塞湖形成於連日降雨期間，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl031",
@@ -1198,7 +1550,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.91871,
-  "lat": 23.33559
+  "lat": 23.33559,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發玉山第41林班崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，存續 3 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl032",
@@ -1221,7 +1580,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.81596,
-  "lat": 23.26441
+  "lat": 23.26441,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發拉芙蘭里崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl033",
@@ -1244,7 +1610,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.65449,
-  "lat": 22.8854
+  "lat": 22.8854,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發茂林里崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，存續 11 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl034",
@@ -1267,7 +1640,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.8598,
-  "lat": 23.15721
+  "lat": 23.15721,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發神池營地; 荖濃溪第97林班崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl035",
@@ -1290,7 +1670,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.80314,
-  "lat": 23.21774
+  "lat": 23.21774,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發復興部落崩塌，堵塞荖濃溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl037",
@@ -1313,7 +1700,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.6176,
-  "lat": 23.18908
+  "lat": 23.18908,
+  "narrative": "本堰塞湖形成於莫拉克颱風影響期間，觸發平坑產業道路鎮安宮崩塌，堵塞後堀溪，蓄水量未登載或規模極小，存續 9 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl017",
@@ -1336,7 +1730,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.00039,
-  "lat": 23.78379
+  "lat": 23.78379,
+  "narrative": "本堰塞湖係由巒大第180林班邊坡崩塌所形成，形成蓄水量約 200 萬立方公尺之中型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.slide_only.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl018",
@@ -1359,7 +1759,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.18908,
-  "lat": 24.03107
+  "lat": 24.03107,
+  "narrative": "本堰塞湖形成於辛樂克颱風影響期間，觸發精英村崩塌，堵塞塔羅灣溪，蓄水量未登載或規模極小，存續 1 日 後潰決。",
+  "rulesFired": [
+   "trigger.typhoon.text",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl015",
@@ -1382,7 +1789,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.18032,
-  "lat": 23.17289
+  "lat": 23.17289,
+  "narrative": "本堰塞湖之形成與碧利斯颱風、0716地震相關，觸發關山第3林班崩塌，堵塞龍泉溪，形成蓄水量約 100 萬立方公尺之中型堰塞湖，存續 1,468 日（約 4.0 年） 後潰決。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl016",
@@ -1405,7 +1819,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.05989,
-  "lat": 23.12516
+  "lat": 23.12516,
+  "narrative": "本堰塞湖之形成誘因於清冊中未記載，觸發關山第28林班崩塌，堵塞大崙溪，形成蓄水量約 8 萬立方公尺之小型堰塞湖，存續 1,424 日（約 3.9 年） 後潰決。",
+  "rulesFired": [
+   "trigger.unknown.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl014",
@@ -1428,7 +1849,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.97473,
-  "lat": 22.67705
+  "lat": 22.67705,
+  "narrative": "本堰塞湖之形成與地震相關，觸發台東第33林班崩塌，堵塞知本溪，形成蓄水量約 39.8 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl013",
@@ -1451,7 +1879,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 121.02546,
-  "lat": 23.17983
+  "lat": 23.17983,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發霧鹿天龍橋上游崩塌，堵塞新武呂溪，形成蓄水量約 45 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl009",
@@ -1474,7 +1909,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.67487,
-  "lat": 23.57328
+  "lat": 23.57328,
+  "narrative": "本堰塞湖之形成與九二一地震相關，形成蓄水量約 4,600 萬立方公尺之大型堰塞湖，存續 1,746 日（約 4.8 年） 後潰決。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "formation.volume.with_scale",
+   "fate.breached.text"
+  ]
  },
  {
   "id": "bl004",
@@ -1497,7 +1938,13 @@ window.BARRIER_LAKES = [
   "statusKey": "stable",
   "setting": "山坡地",
   "lon": 120.84757,
-  "lat": 23.95059
+  "lat": 23.95059,
+  "narrative": "本堰塞湖之形成與九二一地震相關，形成蓄水量約 108.97 萬立方公尺之中型堰塞湖，自形成迄今 持續至今，現況為存在且已穩定。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "formation.volume.with_scale",
+   "fate.stable.with_duration"
+  ]
  },
  {
   "id": "bl003",
@@ -1520,7 +1967,13 @@ window.BARRIER_LAKES = [
   "statusKey": "stable",
   "setting": "山坡地",
   "lon": 120.85126,
-  "lat": 23.95061
+  "lat": 23.95061,
+  "narrative": "本堰塞湖之形成與九二一地震相關，形成蓄水量約 68 萬立方公尺之小型堰塞湖，自形成迄今 持續至今，現況為存在且已穩定。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "formation.volume.with_scale",
+   "fate.stable.with_duration"
+  ]
  },
  {
   "id": "bl012",
@@ -1543,7 +1996,14 @@ window.BARRIER_LAKES = [
   "statusKey": "stable",
   "setting": "林班地",
   "lon": 120.79975,
-  "lat": 23.57915
+  "lat": 23.57915,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發水漾森林，阿里山第52林班崩塌，堵塞石鼓盤溪，形成蓄水量約 23.1 萬立方公尺之小型堰塞湖，自形成迄今 持續至今，現況為存在且已穩定。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.stable.with_duration"
+  ]
  },
  {
   "id": "bl010",
@@ -1566,7 +2026,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 120.98384,
-  "lat": 24.30462
+  "lat": 24.30462,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發大安溪支流雪山坑溪，達觀村雪山花園農場處(大安溪第113林班)崩塌，堵塞雪山坑溪，形成蓄水量約 16 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl005",
@@ -1589,7 +2056,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.83525,
-  "lat": 24.28873
+  "lat": 24.28873,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發大安溪中游，位於卓蘭鎮內灣與上新交界處，斷層隆起阻塞河道崩塌，堵塞大安溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl006",
@@ -1612,7 +2086,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.82219,
-  "lat": 23.75559
+  "lat": 23.75559,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發石盤溪上游線浸山區(台大實驗林第10林班內)崩塌，堵塞石盤溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl007",
@@ -1635,7 +2116,13 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.73926,
-  "lat": 24.2478
+  "lat": 24.2478,
+  "narrative": "本堰塞湖之形成與九二一地震相關，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl008",
@@ -1658,7 +2145,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.81835,
-  "lat": 24.28341
+  "lat": 24.28341,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發大甲溪支流，位於東勢鎮興隆橋下游50公尺，接近石岡水庫，斷層隆起阻塞河道崩塌，堵塞沙漣河，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl011",
@@ -1681,7 +2175,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "山坡地",
   "lon": 120.74964,
-  "lat": 24.12251
+  "lat": 24.12251,
+  "narrative": "本堰塞湖之形成與九二一地震相關，觸發龍寶橋上游200公尺崩塌，堵塞頭汴坑溪，蓄水量未登載或規模極小，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.quake.unknown_time",
+   "slide.blockage.text",
+   "formation.no_volume.text",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl002",
@@ -1704,7 +2205,14 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "林班地",
   "lon": 121.06432,
-  "lat": 23.74657
+  "lat": 23.74657,
+  "narrative": "本堰塞湖形成於連日降雨期間，觸發丹大第40林班崩塌，堵塞丹大溪，形成蓄水量約 2 萬立方公尺之小型堰塞湖，現況已消失，潰決時間與原因未載。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "slide.blockage.text",
+   "formation.volume.with_scale",
+   "fate.gone_unknown.text"
+  ]
  },
  {
   "id": "bl001",
@@ -1727,6 +2235,12 @@ window.BARRIER_LAKES = [
   "statusKey": "gone",
   "setting": "河川",
   "lon": 120.67247,
-  "lat": 23.57598
+  "lat": 23.57598,
+  "narrative": "本堰塞湖形成於0815豪雨期間，形成蓄水量約 4,000 萬立方公尺之大型堰塞湖，於 1979/08/24 因豪雨沖刷潰決，存續 9 日。",
+  "rulesFired": [
+   "trigger.rain.text",
+   "formation.volume.with_scale",
+   "fate.breached.full"
+  ]
  }
 ];

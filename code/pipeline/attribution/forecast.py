@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional
 
-import verbalize as V
+from . import verbalize as V
 
 
 # ══════════════════════════════════════════
@@ -322,6 +322,7 @@ def describe_forecast(fc: Forecast, templates: dict,
 
 
 if __name__ == "__main__":
+    # 執行方式：python -m pipeline.attribution.forecast
     import doctest
     fails, total = doctest.testmod()
     print(f"forecast: {total - fails}/{total} 通過")

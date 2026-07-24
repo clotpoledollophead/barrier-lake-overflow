@@ -303,6 +303,29 @@ function renderDetail() {
   $('#facts').innerHTML = rows.map(([k, v, muted, mono]) =>
     `<dt>${k}</dt><dd class="${muted ? 'muted' : ''}${mono ? ' mono' : ''}">${v}</dd>`
   ).join('');
+
+  renderNarrative(lake);
+}
+
+
+/* 成因敘述：由 attribution/ 的規則引擎產生，點開可看命中的規則 */
+function renderNarrative(lake) {
+  const box = $('#narrative');
+  if (!box) return;
+
+  if (!lake.narrative) {
+    box.innerHTML = '<p class="narr-empty">此筆紀錄尚未產生成因敘述。</p>';
+    return;
+  }
+
+  const rules = (lake.rulesFired || []);
+  box.innerHTML = `
+    <p class="narr-text">${lake.narrative}</p>
+    ${rules.length ? `
+      <details class="narr-rules">
+        <summary>依據的規則（${rules.length} 條）</summary>
+        <ul>${rules.map(r => `<li>${r}</li>`).join('')}</ul>
+      </details>` : ''}`;
 }
 
 

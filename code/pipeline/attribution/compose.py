@@ -23,14 +23,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional
+
+# 句型庫與程式放在一起，改用套件內相對路徑，呼叫端不必再傳
+DEFAULT_TEMPLATES = Path(__file__).parent / "templates.yaml"
 
 try:
     import yaml
 except ImportError:  # 沒裝 PyYAML 時給出明確指示，而非 traceback
     raise SystemExit("需要 PyYAML：pip install pyyaml")
 
-from rules import Attribution
+from .rules import Attribution
 
 
 # ══════════════════════════════════════════
@@ -65,7 +69,8 @@ SLOT_RE = re.compile(r"\{(\w+)\}")
 
 
 class Composer:
-    def __init__(self, template_path: str = "templates.yaml"):
+    def __init__(self, template_path=None):
+        template_path = template_path or DEFAULT_TEMPLATES
         with open(template_path, encoding="utf-8") as f:
             self.tpl = yaml.safe_load(f)
         self.order = self.tpl.get("order", [])
@@ -147,7 +152,7 @@ class Composer:
 _default: Optional[Composer] = None
 
 
-def describe(attr: Attribution, template_path: str = "templates.yaml") -> Narrative:
+def describe(attr: Attribution, template_path=None) -> Narrative:
     """單次呼叫的便利包裝，會快取 Composer。"""
     global _default
     if _default is None:
@@ -156,10 +161,10 @@ def describe(attr: Attribution, template_path: str = "templates.yaml") -> Narrat
 
 
 if __name__ == "__main__":
+    # 執行方式：python -m pipeline.attribution.compose
     import json
-    import sys
 
-    from rules import LakeRecord, Observations, attribute
+    from .rules import LakeRecord, Observations, attribute
 
     # 以清冊 2025 年三筆為示範
     demo = LakeRecord(

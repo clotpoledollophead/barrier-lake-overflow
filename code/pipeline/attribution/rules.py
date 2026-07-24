@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-import verbalize as V
+from . import verbalize as V
 
 
 # ══════════════════════════════════════════
@@ -478,6 +478,7 @@ def _fate(rec: LakeRecord, obs: Observations, a: Attribution) -> None:
 
 
 if __name__ == "__main__":
+    # 執行方式：python -m pipeline.attribution.rules
     import doctest
     fails, total = doctest.testmod()
     print(f"rules: {total - fails}/{total} 通過")

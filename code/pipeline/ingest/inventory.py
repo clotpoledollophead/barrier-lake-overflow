@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-將農村水保署堰塞湖清冊 CSV 轉為 UI 使用的 data/lakes.js
+將農村水保署堰塞湖清冊 CSV 轉為前端使用的 lakes.js
 
-用法:
-    python3 tools/csv_to_js.py data/taiwan-barrier-lakes.csv data/lakes.js
+用法（於 code/ 目錄下）:
+    python -m pipeline.ingest.inventory \
+        ../data/raw/taiwan-barrier-lakes.csv dashboard/data/lakes.js
 
 座標轉換: TWD97 TM2 (EPSG:3826) -> WGS84 經緯度 (EPSG:4326)
 資料來源: https://tech.ardswc.gov.tw/Results/BarrierLakeInfo
@@ -130,5 +131,12 @@ def main(src, dst):
     print(f"寫入 {dst}：{len(rows)} 筆（監測中 {watch}、已穩定 {stable}、消失 {len(rows)-watch-stable}）")
 
 
-if __name__ == "__main__":
+def cli() -> None:
+    if len(sys.argv) != 3:
+        raise SystemExit(
+            "用法：python -m pipeline.ingest.inventory <來源CSV> <輸出JS>")
     main(sys.argv[1], sys.argv[2])
+
+
+if __name__ == "__main__":
+    cli()

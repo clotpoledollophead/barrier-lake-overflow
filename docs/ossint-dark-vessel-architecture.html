@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海纜守望：暗船偵測系統架構報告 — OSSInt 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sea:#EDF3F5;
+    --paper:#FDFEFE;
+    --ink:#152A3D;
+    --muted:#57707F;
+    --hairline:#C6D5DC;
+    --magenta:#B5306F;
+    --magenta-soft:#F6E4EE;
+    --amber:#B06E1B;
+    --amber-soft:#F8EEDC;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Noto Serif TC',serif;
+    --sans:'Noto Sans TC',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--sea);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.85;
+  }
+  a{color:var(--magenta);text-decoration:none;border-bottom:1px solid transparent}
+  a:hover,a:focus-visible{border-bottom-color:var(--magenta)}
+  a:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+
+  /* ── Masthead：海圖角圖框 ── */
+  .masthead{
+    position:relative;
+    border-bottom:2px solid var(--ink);
+    background:
+      linear-gradient(var(--sea) 0 0) padding-box,
+      repeating-linear-gradient(0deg, transparent 0 79px, rgba(21,42,61,.10) 79px 80px),
+      repeating-linear-gradient(90deg, transparent 0 79px, rgba(21,42,61,.10) 79px 80px),
+      var(--sea);
+    background-blend-mode:normal;
+    overflow:hidden;
+  }
+  .masthead-inner{
+    max-width:920px;margin:0 auto;
+    padding:72px 28px 48px;
+    position:relative;
+  }
+  .chart-corner{
+    font-family:var(--mono);
+    font-size:12px;letter-spacing:.08em;
+    color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    margin-bottom:40px;
+  }
+  .chart-corner .fix{color:var(--magenta)}
+  h1{
+    font-family:var(--serif);font-weight:900;
+    font-size:clamp(32px,5.4vw,52px);
+    line-height:1.25;letter-spacing:.01em;
+  }
+  .subtitle{
+    font-family:var(--serif);font-weight:500;
+    font-size:clamp(17px,2.4vw,21px);
+    color:var(--muted);margin-top:14px;max-width:640px;
+  }
+  .meta-strip{
+    margin-top:36px;
+    display:flex;flex-wrap:wrap;gap:0;
+    border:1px solid var(--ink);
+    background:var(--paper);
+    font-size:13px;
+  }
+  .meta-strip div{
+    padding:10px 18px;flex:1 1 160px;
+    border-right:1px solid var(--hairline);
+  }
+  .meta-strip div:last-child{border-right:none}
+  .meta-strip .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);display:block}
+  .meta-strip .v{font-weight:700}
+
+  /* ── 主體 ── */
+  main{max-width:920px;margin:0 auto;padding:24px 28px 96px}
+  .toc{
+    background:var(--paper);
+    border:1px solid var(--hairline);
+    padding:22px 26px;margin:36px 0 12px;
+    font-size:14.5px;
+  }
+  .toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);margin-bottom:10px}
+  .toc ol{list-style:none;columns:2;column-gap:36px}
+  .toc li{padding:3px 0;break-inside:avoid}
+  .toc .no{font-family:var(--mono);color:var(--magenta);margin-right:10px;font-size:12.5px}
+
+  section{margin-top:72px}
+  .sec-mark{
+    display:flex;align-items:baseline;gap:16px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:12px;margin-bottom:28px;
+  }
+  .buoy{
+    font-family:var(--mono);font-weight:500;font-size:13px;
+    color:var(--magenta);
+    border:1.5px solid var(--magenta);
+    border-radius:50%;
+    width:38px;height:38px;flex:0 0 38px;
+    display:flex;align-items:center;justify-content:center;
+    align-self:center;
+  }
+  h2{font-family:var(--serif);font-weight:700;font-size:27px;line-height:1.3}
+  h3{
+    font-family:var(--serif);font-weight:700;font-size:19px;
+    margin:34px 0 12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  h3::before{content:"";width:14px;height:2px;background:var(--magenta);flex:0 0 14px}
+  p{margin:12px 0;max-width:74ch}
+  strong{font-weight:700}
+  .lead{font-size:17.5px}
+
+  ul.plain{margin:12px 0 12px 2px;list-style:none}
+  ul.plain li{
+    padding:6px 0 6px 22px;position:relative;max-width:72ch;
+  }
+  ul.plain li::before{
+    content:"";position:absolute;left:2px;top:16px;
+    width:8px;height:8px;border:1.5px solid var(--muted);transform:rotate(45deg);
+  }
+
+  /* 表格 */
+  table{
+    width:100%;border-collapse:collapse;
+    background:var(--paper);
+    font-size:14.5px;line-height:1.65;
+    margin:18px 0;
+    border:1px solid var(--ink);
+  }
+  caption{
+    caption-side:top;text-align:left;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+    color:var(--muted);padding:0 0 8px 2px;
+  }
+  th{
+    font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.06em;
+    text-align:left;color:var(--ink);
+    background:var(--magenta-soft);
+    border-bottom:1.5px solid var(--magenta);
+    padding:9px 14px;
+  }
+  td{padding:10px 14px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td .m{font-family:var(--mono);font-size:12.8px}
+  .free{color:#1D7A50;font-weight:700;white-space:nowrap}
+  .cond{color:var(--amber);font-weight:700;white-space:nowrap}
+
+  /* 程式/端點區塊 */
+  pre{
+    background:var(--ink);color:#DCE9F0;
+    font-family:var(--mono);font-size:13px;line-height:1.75;
+    padding:18px 22px;overflow-x:auto;
+    margin:16px 0;
+    border-left:4px solid var(--magenta);
+  }
+  code{font-family:var(--mono);font-size:.92em;background:var(--paper);border:1px solid var(--hairline);padding:1px 6px}
+  pre code{background:none;border:none;padding:0}
+  .cmt{color:#8FB0C4}
+
+  /* 提示框 */
+  .note,.warn{
+    padding:16px 20px;margin:20px 0;max-width:78ch;
+    background:var(--paper);font-size:15px;
+  }
+  .note{border-left:4px solid var(--magenta);border-top:1px solid var(--hairline);border-right:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+  .warn{border-left:4px solid var(--amber);background:var(--amber-soft)}
+  .note .tag,.warn .tag{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;display:block;margin-bottom:6px;
+  }
+  .note .tag{color:var(--magenta)}
+  .warn .tag{color:var(--amber)}
+
+  /* pipeline 圖 */
+  .fig{
+    background:var(--paper);border:1px solid var(--ink);
+    padding:26px 22px 18px;margin:22px 0;
+  }
+  .fig-cap{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+    color:var(--muted);margin-top:12px;text-align:center;
+  }
+  svg{width:100%;height:auto;display:block}
+
+  /* 階段卡 */
+  .stage{
+    background:var(--paper);border:1px solid var(--hairline);
+    border-top:3px solid var(--ink);
+    padding:20px 24px;margin:16px 0;
+  }
+  .stage h4{
+    font-family:var(--mono);font-weight:500;font-size:12.5px;letter-spacing:.1em;
+    color:var(--magenta);margin-bottom:6px;
+  }
+  .stage .stage-title{font-family:var(--serif);font-weight:700;font-size:17.5px;margin-bottom:8px}
+
+  footer{
+    border-top:2px solid var(--ink);
+    background:var(--paper);
+  }
+  .footer-inner{
+    max-width:920px;margin:0 auto;padding:28px;
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  }
+  @media (max-width:640px){
+    .toc ol{columns:1}
+    .meta-strip div{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--hairline)}
+  }
+  @media print{
+    body{background:#fff}
+    .masthead{background:#fff}
+    pre{white-space:pre-wrap}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="chart-corner">
+      <span>CHART NO. OSSINT-2026-01</span>
+      <span class="fix">FIX 26°22′N 120°29′E — 東引・台馬三號障礙點</span>
+      <span>SCALE 1:PIPELINE</span>
+    </div>
+    <h1>海纜守望<br>SAR × AIS 暗船偵測系統</h1>
+    <p class="subtitle">以開源衛星雷達影像與船舶軌跡融合，偵測關閉應答器、徘徊於海底電纜路徑的高風險船舶 — 系統架構與實作報告</p>
+    <div class="meta-strip">
+      <div><span class="k">競賽</span><span class="v">OSSInt 2026 黑客松</span></div>
+      <div><span class="k">賽道</span><span class="v">國家安全</span></div>
+      <div><span class="k">文件版本</span><span class="v">v0.1 草案</span></div>
+      <div><span class="k">日期</span><span class="v">2026-07-15</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc" aria-label="目錄">
+  <div class="toc-title">CONTENTS · 目錄</div>
+  <ol>
+    <li><span class="no">01</span><a href="#s1">問題背景與系統定位</a></li>
+    <li><span class="no">02</span><a href="#s2">系統總覽</a></li>
+    <li><span class="no">03</span><a href="#s3">資料層：來源與取得</a></li>
+    <li><span class="no">04</span><a href="#s4">前處理層</a></li>
+    <li><span class="no">05</span><a href="#s5">偵測層：SAR 船舶偵測</a></li>
+    <li><span class="no">06</span><a href="#s6">融合層：SAR–AIS 匹配</a></li>
+    <li><span class="no">07</span><a href="#s7">行為分析與風險評分</a></li>
+    <li><span class="no">08</span><a href="#s8">NLP 情資融合模組</a></li>
+    <li><span class="no">09</span><a href="#s9">應用層：告警儀表板</a></li>
+    <li><span class="no">10</span><a href="#s10">驗證計畫：歷史事件回測</a></li>
+    <li><span class="no">11</span><a href="#s11">技術棧、算力與成本</a></li>
+    <li><span class="no">12</span><a href="#s12">開發時程與里程碑</a></li>
+  </ol>
+</nav>
+
+<!-- ══════════ 01 ══════════ -->
+<section id="s1">
+  <div class="sec-mark"><span class="buoy">01</span><h2>問題背景與系統定位</h2></div>
+  <p class="lead">台灣的海底電纜是對外通訊與離島民生的生命線，近年斷纜事件已從偶發意外演變為持續性威脅。2025 年台灣海纜發生 17 件斷線事件；2026 年截至 3 月底又發生 6 次，其中包括中國籍工程駁船「海宏工 66 號」涉嫌於東引近海破壞台馬三號海纜的事件。</p>
+  <p>破壞行動的共同特徵是<strong>關閉 AIS（船舶自動識別系統）以掩飾行蹤</strong>。「海纜七法」自 2026 年 1 月生效後雖已強制領海內船舶開啟 AIS，但法規約束的是願意守法者——真正的威脅來自不回報位置的「暗船」（dark vessels）。</p>
+  <p>本系統的定位：<strong>不依賴船舶自我回報的獨立偵測能力</strong>。以合成孔徑雷達（SAR）衛星影像主動偵測海面船舶，與 AIS 回報位置交叉比對，找出「雷達看得到、AIS 找不到」的船隻；再結合海纜地理圖資與軌跡行為分析，對徘徊於電纜路徑的高風險目標產生告警。</p>
+  <div class="note">
+    <span class="tag">設計原則</span>
+    全系統以免費開源資料與工具建構，並以真實歷史斷纜事件回測驗證——呼應競賽「拒絕空談、成品必須能在現實環境運行」的核心精神。
+  </div>
+</section>
+
+<!-- ══════════ 02 ══════════ -->
+<section id="s2">
+  <div class="sec-mark"><span class="buoy">02</span><h2>系統總覽</h2></div>
+  <p>系統為五層架構：資料層 → 前處理層 → 偵測層 → 融合層 → 應用層，外加一條平行的 NLP 情資支線在融合層匯入。核心資料流如下：</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 860 300" role="img" aria-label="系統五層資料流圖">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#57707F" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+      <!-- row 1: sources -->
+      <g font-family="'Noto Sans TC',sans-serif" font-size="14">
+        <rect x="20"  y="20" width="180" height="52" fill="#F6E4EE" stroke="#B5306F" stroke-width="1"/>
+        <text x="110" y="42" text-anchor="middle" font-weight="700" fill="#152A3D">Sentinel-1 SAR</text>
+        <text x="110" y="61" text-anchor="middle" font-size="12" fill="#57707F">CDSE API</text>
+
+        <rect x="230" y="20" width="180" height="52" fill="#F6E4EE" stroke="#B5306F" stroke-width="1"/>
+        <text x="320" y="42" text-anchor="middle" font-weight="700" fill="#152A3D">AIS 軌跡</text>
+        <text x="320" y="61" text-anchor="middle" font-size="12" fill="#57707F">GFW · AISHub</text>
+
+        <rect x="440" y="20" width="180" height="52" fill="#F6E4EE" stroke="#B5306F" stroke-width="1"/>
+        <text x="530" y="42" text-anchor="middle" font-weight="700" fill="#152A3D">海纜圖資</text>
+        <text x="530" y="61" text-anchor="middle" font-size="12" fill="#57707F">TeleGeography · moda</text>
+
+        <rect x="650" y="20" width="190" height="52" fill="#F6E4EE" stroke="#B5306F" stroke-width="1"/>
+        <text x="745" y="42" text-anchor="middle" font-weight="700" fill="#152A3D">文字情資</text>
+        <text x="745" y="61" text-anchor="middle" font-size="12" fill="#57707F">海巡公告 · 新聞</text>
+
+        <!-- arrows down -->
+        <line x1="110" y1="72" x2="110" y2="106" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+        <line x1="320" y1="72" x2="320" y2="106" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M530 72 L530 160 L470 160" fill="none" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M745 72 L745 236 L640 236" fill="none" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- row 2: processing -->
+        <rect x="20"  y="110" width="180" height="52" fill="#FDFEFE" stroke="#152A3D" stroke-width="1"/>
+        <text x="110" y="132" text-anchor="middle" font-weight="700" fill="#152A3D">SAR 船舶偵測</text>
+        <text x="110" y="151" text-anchor="middle" font-size="12" fill="#57707F">CFAR → 深度學習</text>
+
+        <rect x="230" y="110" width="180" height="52" fill="#FDFEFE" stroke="#152A3D" stroke-width="1"/>
+        <text x="320" y="132" text-anchor="middle" font-weight="700" fill="#152A3D">軌跡清洗與內插</text>
+        <text x="320" y="151" text-anchor="middle" font-size="12" fill="#57707F">gap · loitering 特徵</text>
+
+        <path d="M110 162 L110 182 L245 182 L245 210" fill="none" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+        <path d="M320 162 L320 182 L295 182 L295 210" fill="none" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- row 3: fusion -->
+        <rect x="180" y="214" width="290" height="52" fill="#FDFEFE" stroke="#152A3D" stroke-width="1.5"/>
+        <text x="325" y="236" text-anchor="middle" font-weight="700" fill="#152A3D">時空匹配 → 暗船判定 → 風險評分</text>
+        <text x="325" y="255" text-anchor="middle" font-size="12" fill="#57707F">距纜距離 × 行為 × 船籍歷史</text>
+
+        <path d="M470 240 L524 240" fill="none" stroke="#57707F" stroke-width="1.2" marker-end="url(#ah)"/>
+
+        <!-- output -->
+        <rect x="530" y="214" width="110" height="52" fill="#152A3D"/>
+        <text x="585" y="236" text-anchor="middle" font-weight="700" fill="#FDFEFE">告警</text>
+        <text x="585" y="255" text-anchor="middle" font-size="12" fill="#C6D5DC">儀表板</text>
+      </g>
+    </svg>
+    <div class="fig-cap">FIG. 1 — 系統資料流總覽：粉框為外部資料源，白框為處理模組</div>
+  </div>
+
+  <p>設計上的兩個關鍵取捨：</p>
+  <ul class="plain">
+    <li><strong>批次優先、即時為輔。</strong>Sentinel-1 對台灣周邊約每 6 天完整覆蓋一次，免費 AIS 亦有延遲，因此系統主打「事件回放 + 準即時監測」，架構上預留即時資料介接口。</li>
+    <li><strong>規則先行、模型後上。</strong>CFAR 偵測與規則式行為分析先建立可解釋的 baseline，深度學習模型作為第二階段的精度升級，確保黑客松時程內永遠有可展示的成品。</li>
+  </ul>
+</section>
+
+<!-- ══════════ 03 ══════════ -->
+<section id="s3">
+  <div class="sec-mark"><span class="buoy">03</span><h2>資料層：來源與取得</h2></div>
+
+  <table>
+    <caption>TABLE 1 — 資料源清單</caption>
+    <thead><tr><th>資料</th><th>來源與取得方式</th><th>更新頻率</th><th>授權</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Sentinel-1 SAR</strong><br><span class="m">IW GRD, VV+VH</span></td>
+        <td>Copernicus Data Space Ecosystem（CDSE），STAC / OData API 自動下載；免費註冊帳號</td>
+        <td>台灣周邊約每 6 天</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>AIS 歷史軌跡</strong></td>
+        <td>Global Fishing Watch API（非商業研究免費），內建 loitering / encounter / AIS gap 事件</td>
+        <td>延遲約 72 小時</td>
+        <td class="free">開放（研究）</td>
+      </tr>
+      <tr>
+        <td><strong>AIS 即時流</strong></td>
+        <td>AISHub（互惠制：自架 RTL-SDR 接收站貢獻資料換取全網存取）</td>
+        <td>即時</td>
+        <td class="cond">互惠</td>
+      </tr>
+      <tr>
+        <td><strong>海纜路線</strong></td>
+        <td>TeleGeography submarinecablemap.com 圖層（CC BY-SA 4.0）；數發部 moda 海纜障礙公告補充實際斷點座標</td>
+        <td>靜態 + 事件</td>
+        <td class="free">CC BY-SA</td>
+      </tr>
+      <tr>
+        <td><strong>訓練資料集</strong></td>
+        <td>xView3-SAR：全球最大公開暗船偵測標註資料集（含 SAR 影像、船位、是否有 AIS 對應）</td>
+        <td>靜態</td>
+        <td class="free">開放</td>
+      </tr>
+      <tr>
+        <td><strong>文字情資</strong></td>
+        <td>海巡署新聞稿、航港局公告、媒體報導（爬蟲 + RSS）</td>
+        <td>每日</td>
+        <td class="free">公開資訊</td>
+      </tr>
+      <tr>
+        <td><strong>輔助資料</strong></td>
+        <td>CWA 海況與風場（過濾浪花誤判）、NLSC 海岸線（陸地遮罩）、福衛影像（TASA，加值選項）</td>
+        <td>—</td>
+        <td class="cond">混合</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Sentinel-1 自動下載範例</h3>
+  <pre><code><span class="cmt"># CDSE STAC API：查詢台灣海峽 AOI 的 Sentinel-1 IW GRD</span>
+POST https://catalogue.dataspace.copernicus.eu/stac/search
+{
+  "collections": ["SENTINEL-1"],
+  "bbox": [118.0, 21.5, 123.5, 26.8],
+  "datetime": "2026-03-25T00:00:00Z/2026-04-05T00:00:00Z",
+  "query": { "sar:instrument_mode": {"eq": "IW"},
+             "product:type":       {"eq": "GRD"} }
+}
+<span class="cmt"># 下載走 OData，以 access_token 認證；排程用 cron 每日輪詢新品</span></code></pre>
+
+  <div class="warn">
+    <span class="tag">資料缺口聲明</span>
+    免費 AIS 無法同時滿足「即時」與「全覆蓋」。本系統以 GFW 歷史資料支撐開發與回測，以自架接收站示範即時能力；提案書中明確標註營運階段需介接航港局 MTNet 或商業資料源。誠實揭露缺口與升級路徑，是面對實務評審的正確姿態。
+  </div>
+</section>
+
+<!-- ══════════ 04 ══════════ -->
+<section id="s4">
+  <div class="sec-mark"><span class="buoy">04</span><h2>前處理層</h2></div>
+
+  <h3>SAR 影像前處理（SNAP / snappy 批次化）</h3>
+  <p>每景 Sentinel-1 IW GRD 影像依序執行：</p>
+  <ul class="plain">
+    <li><strong>軌道精化</strong>（Apply Orbit File）— 套用精密軌道星曆，將定位誤差壓到 10 m 級。</li>
+    <li><strong>輻射校正</strong>（Calibration → σ⁰）— 將像素值轉為後向散射係數，使不同影像可比。</li>
+    <li><strong>陸地遮罩</strong> — 以 NLSC 海岸線向海緩衝 250 m 裁切，排除陸域與近岸雜訊。</li>
+    <li><strong>斑點抑制</strong>（可選）— Lee filter；CFAR 對斑點噪聲敏感時啟用，深度學習路線可省略。</li>
+    <li><strong>地形校正</strong>（Terrain Correction）— 投影至 EPSG:3826（TWD97），與所有本地圖資對齊。</li>
+  </ul>
+  <p>極化選擇：<strong>船舶偵測以 VH 交叉極化為主</strong>（海面雜波低、金屬結構回波強），VV 作為輔助通道。</p>
+
+  <h3>AIS 軌跡清洗</h3>
+  <ul class="plain">
+    <li>剔除異常點：跳點（speed &gt; 50 kn 的位移）、MMSI 格式錯誤、陸上定位。</li>
+    <li>軌跡分段與線性內插：對每艘船建立時間索引軌跡，可查詢任意時刻的內插位置。</li>
+    <li>靜態資料關聯：MMSI → 船名、船籍、船型、噸位（GFW vessel database）。</li>
+    <li>預計算行為事件：AIS gap（訊號中斷 &gt; 2 小時且位於離岸 &gt; 5 nm）、loitering（低速滯留）。</li>
+  </ul>
+</section>
+
+<!-- ══════════ 05 ══════════ -->
+<section id="s5">
+  <div class="sec-mark"><span class="buoy">05</span><h2>偵測層：SAR 船舶偵測</h2></div>
+
+  <div class="stage">
+    <h4>STAGE A — BASELINE</h4>
+    <div class="stage-title">雙參數 CFAR（恆虛警率偵測）</div>
+    <p>在 VH 通道上以滑動視窗計算局部海面雜波統計（背景環均值 μ、標準差 σ），中心像素超過 μ + kσ 即判為船舶候選（k ≈ 5–6，依海況調整）。連通元件聚合後估算船長、方位。優點：無需訓練、完全可解釋、單景推論僅需數分鐘；缺點：高海況誤判多、小船漏偵。</p>
+  </div>
+
+  <div class="stage">
+    <h4>STAGE B — UPGRADE</h4>
+    <div class="stage-title">深度學習偵測（xView3 遷移學習）</div>
+    <p>以 xView3-SAR 公開標註資料集微調物件偵測模型（優先嘗試競賽開源的冠軍方案架構，或 YOLOv8 於 SAR chip 上訓練）。xView3 標註直接包含「該偵測是否有 AIS 對應」，天然貼合暗船任務。訓練於 NCHC TWCC GPU 節點執行；推論階段將 GRD 影像切為 2560×2560 chips 批次處理。</p>
+  </div>
+
+  <table>
+    <caption>TABLE 2 — 兩階段偵測比較</caption>
+    <thead><tr><th>指標</th><th>CFAR baseline</th><th>深度學習</th></tr></thead>
+    <tbody>
+      <tr><td>開發成本</td><td>1–2 天</td><td>1–2 週（含調參）</td></tr>
+      <tr><td>可解釋性</td><td>完全可解釋</td><td>需搭配信心分數說明</td></tr>
+      <tr><td>小型船偵測</td><td>弱</td><td>較佳</td></tr>
+      <tr><td>高海況誤判</td><td>多，需 CWA 海況過濾</td><td>較少</td></tr>
+      <tr><td>算力需求</td><td>CPU 可跑</td><td>TWCC GPU</td></tr>
+    </tbody>
+  </table>
+
+  <p>固定式離岸結構物（風機、平台、養殖設施）以「多時相持續出現於同一位置」建立靜態目標資料庫，於偵測後自動剔除——這是壓低 false positive 最划算的一步。</p>
+</section>
+
+<!-- ══════════ 06 ══════════ -->
+<section id="s6">
+  <div class="sec-mark"><span class="buoy">06</span><h2>融合層：SAR–AIS 時空匹配</h2></div>
+  <p>核心邏輯：對每景 SAR 影像的取像時刻 t₀，把所有 AIS 軌跡內插到 t₀，再與 SAR 偵測結果做二分匹配。</p>
+  <pre><code><span class="cmt"># 匹配流程（每景影像執行一次）</span>
+1. AIS 內插 → 取 t0 ± 10 min 內有訊號的船，內插至 t0 位置
+2. 建立成本矩陣 C[i][j] = dist(SAR_i, AIS_j)
+   ・加入船長一致性懲罰：|len_SAR − len_AIS| / len_AIS
+3. Hungarian assignment，距離門檻 500 m（依定位誤差與船速放寬）
+4. 未匹配之 SAR 偵測 → <b>暗船候選</b>
+5. 未匹配之 AIS 位置  → 記錄（可能為 SAR 漏偵，用於評估召回率）</code></pre>
+  <p>暗船候選再經兩道過濾：靜態目標資料庫（剔除固定結構物）、CWA 海況資料（浪高 &gt; 3 m 時提高 CFAR 門檻並降低候選信心）。留下的候選連同位置、估計船長、時刻進入風險評分。</p>
+</section>
+
+<!-- ══════════ 07 ══════════ -->
+<section id="s7">
+  <div class="sec-mark"><span class="buoy">07</span><h2>行為分析與風險評分</h2></div>
+  <p>風險評分同時作用於兩類目標：SAR 偵測出的暗船候選，以及 AIS 軌跡本身表現異常的船舶（開著 AIS 也可能行為可疑——「宏泰 58 號」在禁錨區的異常航跡就是例子）。</p>
+
+  <h3>行為特徵（規則式，全部可解釋）</h3>
+  <ul class="plain">
+    <li><strong>纜線鄰近度</strong> — 目標與海纜路線的最短距離；1 km 內為高敏感區，5 km 為警戒區。</li>
+    <li><strong>徘徊（loitering）</strong> — 在纜線警戒區內，速度 &lt; 2 kn 持續 &gt; 30 分鐘。</li>
+    <li><strong>AIS gap</strong> — 進入警戒區前後出現訊號中斷，中斷時長與位置皆入分。</li>
+    <li><strong>拖錨特徵</strong> — 航速異常穩定地低於正常巡航（1–4 kn）且航向沿纜線走向、反覆折返或交叉。</li>
+    <li><strong>船籍與歷史</strong> — 權宜旗（喀麥隆、多哥等）、曾涉事船隻、與關注名單船東關聯。</li>
+  </ul>
+
+  <h3>評分公式（初版線性加權，權重由回測校準）</h3>
+  <pre><code>risk = w1·proximity + w2·loiter + w3·gap + w4·drag + w5·flag_history
+初始權重 w = (0.30, 0.20, 0.20, 0.20, 0.10)
+risk ≥ 0.7 → 紅色告警　　0.4–0.7 → 黃色關注</code></pre>
+  <p>刻意選擇可解釋的線性模型而非黑箱分類器：告警必須能向海巡值勤人員說明「為什麼是這艘船」，每個分項得分都要能在儀表板上攤開。</p>
+</section>
+
+<!-- ══════════ 08 ══════════ -->
+<section id="s8">
+  <div class="sec-mark"><span class="buoy">08</span><h2>NLP 情資融合模組（差異化亮點）</h2></div>
+  <p>多數 GIS 背景隊伍止步於空間資料；本模組把非結構化文字情資接進同一條時間軸，是團隊 NLP 專長的直接發揮。</p>
+  <ul class="plain">
+    <li><strong>來源</strong> — 海巡署新聞稿、航港局航船布告、數發部海纜障礙公告、主要媒體海事報導；爬蟲 + RSS 每日彙整。</li>
+    <li><strong>事件抽取</strong> — 以 LLM 做結構化抽取：船名 / MMSI、時間、座標或地名、事件類型（斷纜、扣留、驅離、異常作業）、涉事國籍。地名經 gazetteer 轉座標。</li>
+    <li><strong>實體對齊</strong> — 抽取出的船名對回 AIS 靜態資料庫（模糊比對 + 音譯變體處理，例如「宏泰 58」/「Hong Tai 58」/「HONGTAI58」）。</li>
+    <li><strong>時空關聯</strong> — 文字事件與空間告警在時間 ±48 h、距離 20 km 內自動關聯，合併為單一事件卡片。</li>
+  </ul>
+  <p>成果形式：每個告警不只是地圖上的一個點，而是一張含衛星偵測、軌跡回放、歷史新聞、官方公告的<strong>完整事件檔案</strong>——這就是「地理情報洞察力」的具體展演。</p>
+</section>
+
+<!-- ══════════ 09 ══════════ -->
+<section id="s9">
+  <div class="sec-mark"><span class="buoy">09</span><h2>應用層：告警儀表板</h2></div>
+  <ul class="plain">
+    <li><strong>主地圖</strong>（MapLibre GL）— 海纜路線與緩衝區、即期 SAR 偵測、AIS 軌跡、暗船候選（脈動標記）、風險熱區。</li>
+    <li><strong>事件時間軸</strong> — 空間告警與 NLP 文字事件合流的時序視圖，可回放任一歷史事件。</li>
+    <li><strong>事件卡片</strong> — 風險分數拆解、SAR chip 縮圖、軌跡動畫、關聯報導連結。</li>
+    <li><strong>回放模式</strong> — 決賽 demo 的主戲：載入歷史事件日期，逐步展示系統如何在事發前標出目標船。</li>
+  </ul>
+  <p>後端 FastAPI + PostGIS；偵測管線以 Celery 排程。全部容器化（Docker Compose），評審可一鍵起服務——再次呼應「可在現實環境運行」。</p>
+</section>
+
+<!-- ══════════ 10 ══════════ -->
+<section id="s10">
+  <div class="sec-mark"><span class="buoy">10</span><h2>驗證計畫：歷史事件回測</h2></div>
+  <p>用三起已公開的真實事件做端到端回測，這是提案書與決賽簡報最有力的證據鏈：</p>
+  <table>
+    <caption>TABLE 3 — 回測事件</caption>
+    <thead><tr><th>事件</th><th>時間 / 地點</th><th>驗證目標</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>順興 39 號</strong><br><span class="m">喀麥隆旗貨輪</span></td>
+        <td>2025-01 · 基隆外海<br>跨太平洋快速海纜（TPE）受損</td>
+        <td>異常交叉航行 + 拖錨特徵是否觸發行為告警</td>
+      </tr>
+      <tr>
+        <td><strong>宏泰 58 號</strong><br><span class="m">多哥旗、中國籍船員</span></td>
+        <td>2025-02 · 台澎三號禁錨區</td>
+        <td>禁錨區內 loitering 偵測；本案已刑事定罪，事實基礎最完整</td>
+      </tr>
+      <tr>
+        <td><strong>海宏工 66 號</strong><br><span class="m">中國籍工程駁船</span></td>
+        <td>2026-03-30 · 東引近海<br>台馬三號海纜</td>
+        <td>SAR 影像能否於事發時段偵測到目標船；AIS 狀態交叉驗證</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>評估指標：事發前 72 小時內系統是否對涉事船產生黃色以上告警（命中）；同期同海域誤報率（每百平方公里告警數）；SAR 偵測對照 AIS 的召回率。回測若揭露權重缺陷，即以之校準評分公式——把失敗也寫進報告，展示工程迭代的誠實性。</p>
+</section>
+
+<!-- ══════════ 11 ══════════ -->
+<section id="s11">
+  <div class="sec-mark"><span class="buoy">11</span><h2>技術棧、算力與成本</h2></div>
+  <table>
+    <caption>TABLE 4 — 技術棧與成本</caption>
+    <thead><tr><th>層級</th><th>選型</th><th>成本</th></tr></thead>
+    <tbody>
+      <tr><td>影像處理</td><td><span class="m">Python · SNAP/snappy · GDAL · rasterio</span></td><td class="free">$0</td></tr>
+      <tr><td>偵測模型</td><td><span class="m">CFAR (NumPy) · YOLOv8 / xView3 開源方案</span></td><td class="free">$0</td></tr>
+      <tr><td>空間資料庫</td><td><span class="m">PostGIS</span></td><td class="free">$0</td></tr>
+      <tr><td>後端 / 排程</td><td><span class="m">FastAPI · Celery · Docker Compose</span></td><td class="free">$0</td></tr>
+      <tr><td>前端地圖</td><td><span class="m">MapLibre GL · deck.gl（軌跡動畫）</span></td><td class="free">$0</td></tr>
+      <tr><td>NLP</td><td><span class="m">開源 LLM 抽取管線 + 規則後處理</span></td><td class="free">$0</td></tr>
+      <tr><td>GPU 訓練</td><td>NCHC TWCC（主辦單位資源，說明會確認參賽額度）</td><td class="cond">待確認</td></tr>
+      <tr><td>AIS 接收站（選配）</td><td>RTL-SDR + 天線，自架換取 AISHub 資格</td><td class="cond">約 NT$1,500–2,000</td></tr>
+    </tbody>
+  </table>
+  <p>總計：核心系統零元；唯一可能的現金支出是選配的 AIS 接收站，且「自建感測節點」本身就是簡報加分項。</p>
+</section>
+
+<!-- ══════════ 12 ══════════ -->
+<section id="s12">
+  <div class="sec-mark"><span class="buoy">12</span><h2>開發時程與里程碑</h2></div>
+  <table>
+    <caption>TABLE 5 — 對齊競賽時程（提案截止 2026-09-10 · 輔導期 09-22 至 11-06 · 決選 11 月）</caption>
+    <thead><tr><th>期間</th><th>里程碑</th><th>交付物</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m">07 下旬</span></td><td>參加線上說明會；確認 TWCC 額度與影像資源</td><td>資源清單定稿</td></tr>
+      <tr><td><span class="m">08 上旬</span></td><td>資料管線：CDSE 自動下載 + SAR 前處理批次化 + GFW 介接</td><td>可重跑的 ingest pipeline</td></tr>
+      <tr><td><span class="m">08 中旬</span></td><td>CFAR baseline + 陸地遮罩 + 靜態目標庫</td><td>單景端到端偵測 demo</td></tr>
+      <tr><td><span class="m">08 下旬</span></td><td>SAR–AIS 匹配 + 行為規則 + 風險評分 v1；宏泰 58 首次回測</td><td>回測初步結果</td></tr>
+      <tr><td><span class="m">09 上旬</span></td><td>撰寫提案書（含回測證據）；<strong>09-10 截止投件</strong></td><td>提案書</td></tr>
+      <tr><td><span class="m">輔導期</span></td><td>深度學習偵測升級、NLP 情資模組、儀表板完整化、三事件全回測</td><td>決賽成品</td></tr>
+      <tr><td><span class="m">11 月</span></td><td>決選簡報：海宏工 66 事件回放 live demo</td><td>簡報 + 展示</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="tag">風險備援</span>
+    若深度學習模型於輔導期內未達標，CFAR baseline + 行為分析 + NLP 情資融合仍構成完整可展示的系統——每個階段的產出都獨立成立，不存在「全有或全無」的單點失敗。
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <span>OSSINT 2026 · 海纜守望 DARK VESSEL WATCH</span>
+    <span>DRAFT v0.1 · 2026-07-15 · 內部工作文件</span>
+  </div>
+</footer>
+
+</body>
+</html>

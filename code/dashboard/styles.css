@@ -256,6 +256,26 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .pill.s-watch{border-color:var(--clay);color:var(--clay)}
 .pill.s-stable{border-color:var(--ochre);color:var(--ochre)}
 
+/* ── 成因敘述 ── */
+.narrative{border-top:1px solid var(--line);padding:clamp(16px,2.2vw,26px)}
+.narr-text{font-size:14.5px;line-height:1.95;color:var(--fog);max-width:60ch}
+.narr-empty{font-size:13.5px;color:var(--moss)}
+.narr-rules{margin-top:14px}
+.narr-rules summary{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--moss);cursor:pointer;list-style:none;
+}
+.narr-rules summary::before{content:"▸ ";color:var(--jade)}
+.narr-rules[open] summary::before{content:"▾ "}
+.narr-rules summary:hover{color:var(--fog)}
+.narr-rules summary:focus-visible{outline:1px solid var(--jade);outline-offset:2px}
+.narr-rules ul{list-style:none;margin-top:10px;display:grid;gap:4px}
+.narr-rules li{
+  font-family:var(--mono);font-size:11.5px;color:var(--moss);
+  padding-left:14px;position:relative;
+}
+.narr-rules li::before{content:"·";position:absolute;left:2px;color:var(--jade-dim)}
+
 .empty{
   padding:30px;text-align:center;color:var(--moss);font-size:14px;
   border:1px dashed var(--line-strong);background:var(--stone);
