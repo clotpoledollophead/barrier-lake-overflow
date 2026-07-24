@@ -1,0 +1,163 @@
+# ════════════════════════════════════════════════════════════
+# 堰塞湖成因敘述 · 句型庫
+#
+# 這個檔案不需要程式知識也能修改。每個 key 對應一條規則，
+# {大括號} 內是由 rules.py 算出後填入的欄位。
+#
+# 修改原則：
+#   1. 只改字句，不要改 {欄位名稱}
+#   2. 一條規則就是一個可稽核的判斷，不要在句子裡塞入未經計算的因果
+#   3. 若某情況不確定，寧可不寫該句，也不要寫得含糊
+# ════════════════════════════════════════════════════════════
+
+meta:
+  version: "0.1"
+  updated: "2026-07-24"
+  note: "初版。門檻值依中央氣象署定義與水保署慣用語，如有出入以官方定義為準。"
+
+# ── 語序：組裝時依此順序串接命中的片語 ──────────────────
+order:
+  - trigger      # 誘因（地震／颱風／氣流／未記載）
+  - rainfall     # 降雨條件
+  - slide        # 崩塌與堵塞
+  - formation    # 形成結果
+  - fate         # 後續（潰決／穩定／監測中）
+
+# ── 1. 誘因 ────────────────────────────────────────────
+trigger:
+  quake:
+    text: "本堰塞湖形成於{quake_name}後 {hours_after} 內"
+    with_pga: "本堰塞湖形成於{quake_name}後 {hours_after} 內，壩址推估地表加速度約 {pga} gal"
+    unknown_time: "本堰塞湖之形成與{quake_name}相關"
+
+  typhoon:
+    # 無中心距離資料時用這句——不可在缺資料時硬套相對位置
+    text: "本堰塞湖形成於{typhoon_name}影響期間"
+    with_position: "本堰塞湖形成於{typhoon_name}{position_phrase}影響期間"
+    with_distance: "本堰塞湖形成於{typhoon_name}{position_phrase}影響期間，颱風中心最近距離約 {distance} 公里"
+
+  # 颱風相對位置：由中心距離與風場判定，門檻見 rules.py
+  position_phrase:
+    direct: "直接侵襲"          # 中心距離 < 100 km
+    outer: "外圍環流"           # 100–300 km
+    southwest_flow: "引進之西南氣流" # > 300 km 且西南風場顯著
+    distant: "所引動之天氣系統"  # > 300 km，風場條件不明
+
+  rain:
+    text: "本堰塞湖形成於{rain_event}期間"
+    no_typhoon: "本堰塞湖形成於{rain_event}期間，無颱風直接影響"
+    frontal: "本堰塞湖形成於梅雨鋒面滯留期間"
+
+  slide_only:
+    text: "本堰塞湖係由{location}邊坡崩塌所形成"
+
+  unknown:
+    text: "本堰塞湖之形成誘因於清冊中未記載"
+
+# ── 2. 降雨 ────────────────────────────────────────────
+rainfall:
+  accumulation:
+    text: "上游集水區 {window} 小時累積雨量達 {mm} mm"
+    with_grade: "上游集水區 {window} 小時累積雨量達 {mm} mm，達{grade}標準"
+    with_compare: "上游集水區 {window} 小時累積雨量達 {mm} mm，達{grade}標準（{compare_phrase}）"
+
+  # 雨量分級 —— 採中央氣象署定義，請勿自行增修級距名稱
+  grade:
+    heavy: "大雨"            # 24h ≥ 80 mm 或 1h ≥ 40 mm
+    extremely_heavy: "豪雨"   # 24h ≥ 200 mm
+    torrential: "大豪雨"      # 24h ≥ 350 mm
+    extremely_torrential: "超大豪雨"  # 24h ≥ 500 mm
+
+  compare_phrase:
+    top1: "為該站有紀錄以來前 1% 之強降雨"
+    top5: "為該站近十年前 5% 之強降雨"
+    # 落在其他區間時不輸出比較子句，避免無意義的敘述
+
+  intensity:
+    text: "最大時雨量 {hourly} mm"
+
+  no_data:
+    text: "形成期間之雨量資料不足，未納入判定"
+
+# ── 3. 崩塌與堵塞 ──────────────────────────────────────
+slide:
+  blockage:
+    text: "觸發{location}崩塌，堵塞{river}"
+    with_reach: "觸發{location}崩塌，堵塞{river}{reach}"
+    no_location: "觸發鄰近邊坡崩塌，堵塞{river}"
+
+  scale:
+    text: "崩塌地與壩體相距約 {offset} 公尺"
+
+# ── 4. 形成結果 ────────────────────────────────────────
+formation:
+  volume:
+    text: "形成蓄水量約 {volume} 萬立方公尺之堰塞湖"
+    with_scale: "形成蓄水量約 {volume} 萬立方公尺之{scale}堰塞湖"
+
+  # 規模分級 —— 本專案自訂，非官方定義，簡報時須註明
+  scale:
+    tiny: "小型"      # < 10 萬 m³
+    small: "小型"     # 10–100
+    medium: "中型"    # 100–1000
+    large: "大型"     # 1000–5000
+    huge: "極大型"    # ≥ 5000
+
+  no_volume:
+    text: "蓄水量未登載或規模極小"
+
+# ── 5. 後續 ────────────────────────────────────────────
+fate:
+  breached:
+    text: "存續 {duration} 後潰決"
+    with_cause: "存續 {duration} 後因{cause}潰決"
+    with_date: "於 {date} 潰決，存續 {duration}"
+    full: "於 {date} 因{cause}潰決，存續 {duration}"
+
+  # 潰決原因的正規化：清冊原文 → 標準用語
+  breach_cause:
+    overflow: "溢流沖刷"
+    piping: "壩體滲流管湧"
+    excavation: "人為機具開挖"
+    rainfall: "豪雨沖刷"
+    unknown: "原因未載"
+
+  stable:
+    text: "現況為存在且已穩定"
+    with_duration: "自形成迄今 {duration}，現況為存在且已穩定"
+
+  monitoring:
+    text: "現況列為監測中"
+    with_duration: "自形成迄今 {duration}，現況列為監測中"
+
+  gone_unknown:
+    text: "現況已消失，潰決時間與原因未載"
+
+# ── 6. 溢流預報（未來擴充用，目前僅定義句型）─────────────
+forecast:
+  headline:
+    text: "依 {basis_time} 影像推估，水位距壩頂 {gap} 公尺"
+
+  window:
+    text: "預估溢流時間介於 {earliest} 至 {latest}，中位情境為 {median}"
+    single: "預估於 {median} 前後達壩頂"
+    no_overflow: "依目前入流量推估，{horizon} 內不致溢流"
+
+  sensitivity:
+    text: "若上游 {window} 小時累積雨量超過 {threshold} mm，最快可能提前至 {early}"
+
+  staleness:
+    fresh: "資料更新於 {age} 前"
+    aging: "資料更新於 {age} 前，下次衛星過境於 {next_pass} 後"
+    stale: "資料已逾 {age} 未更新，推估值僅供參考"
+
+  # 誠實揭露：兩次衛星過境間為純外推，此句一律附加
+  disclaimer:
+    text: "兩次衛星觀測間之水位為雨量外推值，未經實測校正"
+
+# ── 7. 缺值與否定的區分 ────────────────────────────────
+# 「無此現象」與「未記載」在災防判讀上意義不同，不可混用
+absence:
+  not_recorded: "未記載"
+  none_occurred: "無"
+  insufficient_data: "資料不足"
