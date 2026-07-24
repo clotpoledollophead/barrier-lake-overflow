@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>堰塞湖監測 · 全台應變儀表板</title>
+<title>全台堰塞湖清冊 · 空間分析</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -11,39 +11,33 @@
 </head>
 <body>
 
-<!-- ═══ 狀態列 ═══ -->
+<!-- 狀態列 -->
 <div class="statusbar">
   <div class="wrap">
-    <span class="sysname"><span class="pulse"></span>堰塞湖監測 · 全台</span>
-    <div class="stat"><span class="label">監測中</span><b data-bind="countAll">—</b></div>
-    <div class="stat"><span class="label">A 級</span><b data-bind="countA">—</b></div>
-    <div class="stat"><span class="label">最近影像</span><b>07/23 06:12 S1</b></div>
-    <div class="stat"><span class="label">下次過境</span><b>21 小時 47 分</b></div>
+    <span class="sysname"><span class="pulse"></span>全台堰塞湖清冊</span>
+    <div class="stat"><span class="label">總計</span><b data-bind="countAll">—</b></div>
+    <div class="stat"><span class="label">監測中</span><b data-bind="countWatch">—</b></div>
+    <div class="stat"><span class="label">存在已穩定</span><b data-bind="countStable">—</b></div>
+    <div class="stat"><span class="label">已消失</span><b data-bind="countGone">—</b></div>
     <span class="spacer"></span>
-    <div class="stat"><span class="label">資料更新</span><b>07/23 08:40</b></div>
+    <div class="stat"><span class="label">資料來源</span><b>農村水保署清冊</b></div>
   </div>
 </div>
 
 <main class="wrap">
 
-  <!-- ═══ 主視圖：平面地圖 + 詳情 ═══ -->
+  <!-- 主視圖 -->
   <section class="board">
 
-    <!-- 地圖 -->
     <div class="panel map-panel">
       <div class="panel-head">
         <h2>全台分布</h2>
-        <div class="filters" role="group" aria-label="依風險等級篩選">
-          <button class="filter is-on" data-filter="all">全部</button>
-          <button class="filter" data-filter="A">A</button>
-          <button class="filter" data-filter="B">B</button>
-          <button class="filter" data-filter="C">C</button>
-        </div>
+        <span class="head-note" data-bind="mapCount">—</span>
       </div>
 
       <div class="map-stage">
         <svg id="map" viewBox="0 0 460 780" role="img"
-             aria-label="台灣平面圖，標示各處監測中的堰塞湖位置">
+             aria-label="台灣平面圖，標示歷年堰塞湖位置">
           <defs>
             <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse">
               <path d="M46 0 L0 0 0 46" fill="none" stroke="rgba(202,216,206,.07)" stroke-width="1"/>
@@ -53,115 +47,96 @@
           <g id="mapBase"></g>
           <g id="mapMarkers"></g>
         </svg>
-        <p class="map-note">點選標記查看詳情 · 圓圈大小代表推估蓄水量</p>
+
+        <div class="map-legend">
+          <span><i class="key k-watch"></i>監測中</span>
+          <span><i class="key k-stable"></i>存在已穩定</span>
+          <span><i class="key k-gone"></i>已消失</span>
+          <span class="sep"></span>
+          <span class="scale"><i class="key sz-s"></i><i class="key sz-m"></i><i class="key sz-l"></i>蓄水量</span>
+        </div>
       </div>
     </div>
 
-    <!-- 詳情 -->
     <div class="panel detail-panel">
       <div class="detail-head">
-        <span class="grade" data-bind="grade">—</span>
+        <span class="grade" data-bind="status">—</span>
         <h1 data-bind="name">—</h1>
         <span class="where" data-bind="where">—</span>
       </div>
 
-      <svg id="section" class="section-figure" viewBox="0 0 800 300" role="img"
-           aria-label="所選堰塞湖的縱剖面與目前水位">
-        <defs>
-          <clipPath id="terrainClip">
-            <path d="M0 60 L250 235 L470 228 L575 95 L630 235 L700 240 L800 80 L800 300 L0 300 Z"/>
-          </clipPath>
-          <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3FA9A0" stop-opacity=".55"/>
-            <stop offset="100%" stop-color="#1E5F5C" stop-opacity=".2"/>
-          </linearGradient>
-          <pattern id="hatch" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="0" x2="0" y2="9" stroke="#7CA48A" stroke-opacity=".35" stroke-width="1.4"/>
-          </pattern>
-        </defs>
-
-        <path class="terrain-fill"
-              d="M0 60 L250 235 L470 228 L575 95 L630 235 L700 240 L800 80 L800 300 L0 300 Z"/>
-        <g clip-path="url(#terrainClip)" class="contours">
-          <line x1="0" y1="90" x2="800" y2="90"/><line x1="0" y1="125" x2="800" y2="125"/>
-          <line x1="0" y1="160" x2="800" y2="160"/><line x1="0" y1="195" x2="800" y2="195"/>
-          <line x1="0" y1="230" x2="800" y2="230"/><line x1="0" y1="265" x2="800" y2="265"/>
-        </g>
-        <path d="M470 228 L575 95 L630 235 Z" fill="url(#hatch)"/>
-        <path class="terrain-line" d="M470 228 L575 95 L630 235"/>
-        <path class="terrain-line" d="M0 60 L250 235 L470 228 L575 95 L630 235 L700 240 L800 80"/>
-
-        <g id="waterGroup">
-          <path id="waterBody" d=""/>
-          <line id="waterLine" x1="0" y1="0" x2="0" y2="0"/>
-        </g>
-
-        <line class="crest-line" x1="380" y1="95" x2="660" y2="95"/>
-        <text class="axis-label crest" id="crestLabel" x="666" y="92">—</text>
-        <text class="axis-label water" id="levelLabel" x="666" y="0">—</text>
-
-        <g class="caliper" id="caliper">
-          <line id="calLine" x1="592" y1="95" x2="592" y2="0"/>
-          <line x1="586" y1="95" x2="598" y2="95"/>
-          <line id="calFoot" x1="586" y1="0" x2="598" y2="0"/>
-        </g>
-        <text class="gap-value" id="gapLabel" x="606" y="0">—</text>
-      </svg>
-
       <div class="readout">
         <div class="cell">
-          <span class="label">推估蓄水量</span>
+          <span class="label">蓄水量</span>
           <div><span class="num" data-bind="volume">—</span><span class="unit">萬 m³</span></div>
           <div class="sub" data-bind="volumeNote">—</div>
         </div>
         <div class="cell">
-          <span class="label">距壩頂</span>
-          <div><span class="num" data-bind="gap">—</span><span class="unit">m</span></div>
-          <div class="sub" data-bind="gapNote">—</div>
+          <span class="label">形成年度</span>
+          <div><span class="num" data-bind="year">—</span></div>
+          <div class="sub" data-bind="formed">—</div>
         </div>
         <div class="cell">
-          <span class="label">推估蓄滿時間</span>
-          <div><span class="num" data-bind="fill">—</span><span class="unit">小時</span></div>
-          <div class="sub" data-bind="fillNote">—</div>
+          <span class="label">持續時間</span>
+          <div><span class="num" data-bind="duration">—</span><span class="unit" data-bind="durationUnit"></span></div>
+          <div class="sub" data-bind="durationNote">—</div>
         </div>
       </div>
 
-      <div class="impact">
-        <div>
-          <span class="label">若全潰，淹沒範圍內</span>
-          <div class="exposure">
-            <div><span class="num" data-bind="people">—</span><div class="sub">影響人口</div></div>
-            <div><span class="num" data-bind="roads">—</span><div class="sub">中斷路段</div></div>
-            <div><span class="num" data-bind="isolated">—</span><div class="sub">孤島化聚落</div></div>
-          </div>
-          <p class="fineprint" data-bind="impactNote">—</p>
-        </div>
-      </div>
+      <dl class="facts" id="facts"></dl>
     </div>
   </section>
 
-  <!-- ═══ 清單 ═══ -->
+  <!-- 年度分布 -->
   <section class="sec">
     <div class="sec-head">
-      <h2>監測清單</h2>
+      <h2>年度分布</h2>
+      <span class="rule"></span>
+      <span class="count">1979 – 2026 · 點選年份篩選</span>
+    </div>
+    <div class="panel timeline-panel">
+      <svg id="timeline" viewBox="0 0 1200 260" role="img"
+           aria-label="各年度堰塞湖形成數量長條圖"></svg>
+      <p class="map-note" data-bind="timelineNote">—</p>
+    </div>
+  </section>
+
+  <!-- 篩選與清單 -->
+  <section class="sec">
+    <div class="sec-head">
+      <h2>清冊</h2>
       <span class="rule"></span>
       <span class="count" data-bind="listCount">—</span>
     </div>
+
+    <div class="filterbar">
+      <div class="filter-group" role="group" aria-label="依存續狀態篩選">
+        <span class="label">存續狀態</span>
+        <div class="filters">
+          <button class="filter is-on" data-kind="status" data-val="all">全部</button>
+          <button class="filter" data-kind="status" data-val="watch">監測中</button>
+          <button class="filter" data-kind="status" data-val="stable">已穩定</button>
+          <button class="filter" data-kind="status" data-val="gone">已消失</button>
+        </div>
+      </div>
+      <div class="filter-group" role="group" aria-label="依誘因篩選">
+        <span class="label">誘因</span>
+        <div class="filters">
+          <button class="filter is-on" data-kind="cause" data-val="all">全部</button>
+          <button class="filter" data-kind="cause" data-val="quake">地震</button>
+          <button class="filter" data-kind="cause" data-val="typhoon">颱風</button>
+          <button class="filter" data-kind="cause" data-val="rain">降雨</button>
+          <button class="filter" data-kind="cause" data-val="slide">崩塌</button>
+        </div>
+      </div>
+      <button class="reset" id="resetBtn" hidden>清除篩選</button>
+    </div>
+
     <div class="lakes" id="lakeList"></div>
     <div class="empty" id="listEmpty" hidden>
-      <b>此等級目前沒有監測中的堰塞湖</b>
-      切換上方篩選查看其他等級。
+      <b>沒有符合條件的紀錄</b>
+      放寬篩選條件，或清除年份選取。
     </div>
-  </section>
-
-  <!-- ═══ 示警紀錄 ═══ -->
-  <section class="sec">
-    <div class="sec-head">
-      <h2>示警紀錄</h2>
-      <span class="rule"></span>
-      <span class="count">近 72 小時</span>
-    </div>
-    <div class="log" id="logList"></div>
   </section>
 
 </main>
@@ -169,10 +144,11 @@
 <footer>
   <div class="wrap">
     <span>堰塞湖快速評估系統 · OSSInt 2026</span>
-    <span>資料：Sentinel-1/2 · CWA · 內政部 DEM · SEGIS</span>
+    <span>清冊：農業部農村發展及水土保持署 · 座標由 TWD97 TM2 轉 WGS84</span>
   </div>
 </footer>
 
+<script src="data/lakes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
