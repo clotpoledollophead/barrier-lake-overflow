@@ -1,0 +1,20 @@
+logit(風險) = -1.636 +2.407·z(rain_7d) -0.801·z(rain_30d) +0.442·z(formed_by_rain) -0.343·z(rain_3d) +0.342·z(formed_by_quake) -0.255·z(volume) +0.130·z(rain_1d)
+風險機率 p = 1 / (1 + exp(-logit))
+  z(特徵) = (特徵 - 平均) / 標準差；係數已標準化，正=越大越危險，可互比強度
+
+各特徵的平均與標準差（把原始值代回 z 用）：
+                    mean      std
+rain_1d            7.322   16.332
+rain_3d           21.968   37.142
+rain_7d           51.235   67.148
+rain_30d         218.283  186.877
+volume             0.288    0.778
+formed_by_quake    0.264    0.441
+formed_by_rain     0.584    0.493
+
+原始尺度（可直接代入未標準化的特徵值）：
+logit(風險) = -3.026 +0.03584·rain_7d -0.00429·rain_30d +0.89623·formed_by_rain -0.00925·rain_3d +0.77594·formed_by_quake -0.32746·volume +0.00793·rain_1d
+
+（此公式在全體資料上的 ROC-AUC = 0.927，僅供擬合度參考）
+
+\mathrm{logit}(p) = -1.636+2.407\,z_{rain_7d} -0.801\,z_{rain_30d} +0.442\,z_{formed_by_rain} -0.343\,z_{rain_3d} +0.342\,z_{formed_by_quake} -0.255\,z_{volume} +0.130\,z_{rain_1d}, \quad p = \frac{1}{1+e^{-\mathrm{logit}}}

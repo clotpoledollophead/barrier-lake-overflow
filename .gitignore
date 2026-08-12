@@ -28,6 +28,12 @@ data/raw/*
 !data/raw/.gitkeep
 !data/raw/*.csv
 
+# 風險模型快照（小檔案，非時序矩陣）也要進版控
+!data/raw/risk/
+!data/raw/risk/*.csv
+!data/raw/risk/*.txt
+!data/raw/risk/*.json
+
 # 中繼產物可重新產生，不進版控
 data/derived/
 data/interim/
@@ -59,6 +65,7 @@ data/cache/
 # 但前端沒有 build step，不進 git 網頁就開不起來。
 # 檔頭已註明「自動產生，請勿手動編輯」。
 !code/dashboard/data/lakes.js
+!code/dashboard/data/risk.js
 
 # ── 憑證與金鑰 ────────────────────────────────────────
 # CWA API key、CDSE 帳密、TDX client secret 一律不得進版控

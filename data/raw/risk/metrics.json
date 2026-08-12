@@ -1,0 +1,11 @@
+{
+  "mode": "LIVE(ERA5-Land)",
+  "model": "DecisionTree(+LogReg formula)",
+  "era5_dataset": "reanalysis-era5-land",
+  "years": [
+    2017,
+    2026
+  ],
+  "n_positives": 12,
+  "roc_auc": null
+}

@@ -46,7 +46,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .unit{font-family:var(--mono);font-size:12px;color:var(--moss);margin-left:6px}
 .sub{font-size:12.5px;color:var(--moss);margin-top:5px}
 
-/* ── 狀態列 ── */
+/* ── 頂部第一層：系統名稱與資料狀態 ── */
 .statusbar{
   border-bottom:1px solid var(--line);
   background:linear-gradient(180deg,rgba(63,169,160,.05),transparent);
@@ -66,13 +66,102 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   box-shadow:0 0 0 0 rgba(63,169,160,.6);animation:pulse 2.4s infinite;
 }
 @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(63,169,160,0)}100%{box-shadow:0 0 0 0 rgba(63,169,160,0)}}
-.stat{display:flex;flex-direction:column;gap:1px}
-.stat b{font-family:var(--mono);font-size:13px;color:var(--fog);font-weight:500}
+.stat-meta{
+  font-family:var(--mono);font-size:12px;color:var(--moss);white-space:nowrap;
+}
+.stat-meta b{color:var(--fog);font-weight:500}
 .statusbar .spacer{flex:1}
+
+/* ── 即時雨量輸入列 ── */
+.livebar{
+  border-bottom:1px solid var(--line);
+  background:rgba(63,169,160,.05);
+}
+.livebar-inner{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding-top:9px;padding-bottom:9px;
+}
+.livebar-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--jade);white-space:nowrap;
+}
+.livebar-input{
+  font:inherit;font-family:var(--mono);font-size:12.5px;
+  background:var(--raised);color:var(--snow);
+  border:1px solid var(--line-strong);border-radius:3px;
+  padding:6px 10px;min-width:260px;flex:1;max-width:420px;
+}
+.livebar-input::placeholder{color:var(--moss)}
+.livebar-input:focus{outline:none;border-color:var(--jade)}
+.livebar-remember{
+  font-size:12px;color:var(--moss);white-space:nowrap;
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+}
+.livebar-btn{
+  font-family:var(--mono);font-size:12px;color:var(--abyss);
+  background:var(--jade);border-radius:3px;padding:6px 14px;
+  white-space:nowrap;transition:background .16s ease;
+}
+.livebar-btn:hover{background:var(--snow)}
+.livebar-status{
+  font-family:var(--mono);font-size:11.5px;color:var(--moss);
+}
+.livebar-status.live-busy{color:var(--ochre)}
+.livebar-status.live-ok{color:var(--jade)}
+.livebar-status.live-warn{color:var(--ochre)}
+.livebar-status.live-error{color:var(--clay)}
+
+/* ── 頂部第二層：全台風險概況 KPI ── */
+.kpi-bar{border-bottom:1px solid var(--line);background:var(--stone)}
+.kpi-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--line);padding-top:1px;
+}
+.kpi-card{background:var(--stone);padding:14px clamp(14px,2vw,24px) 16px;display:flex;flex-direction:column;gap:4px}
+.kpi-card .num{font-size:clamp(21px,2.4vw,30px)}
+.kpi-card.kpi-danger .num{color:var(--clay)}
+.kpi-card.kpi-warning .num{color:var(--ochre)}
+.kpi-card .sub{font-size:11.5px;color:var(--moss)}
+@media (max-width:1199px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── CAP 示警橫幅 ── */
+.capbar{
+  border-bottom:1px solid var(--clay);
+  background:linear-gradient(180deg,rgba(194,80,60,.14),transparent);
+}
+.capbar-inner{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding-top:10px;padding-bottom:10px;
+}
+.capbar-badge{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  color:var(--clay);border:1px solid var(--clay);padding:2px 9px;
+  white-space:nowrap;text-transform:uppercase;
+}
+.capbar-text{font-size:13.5px;color:var(--fog)}
+.capbar-info{
+  width:15px;height:15px;border-radius:50%;border:1px solid var(--line-strong);
+  color:var(--moss);font-family:var(--mono);font-size:10px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:help;
+}
+.capbar-info:hover,.capbar-info:focus-visible{color:var(--fog);border-color:var(--jade)}
+.capbar-viewall{
+  font-family:var(--mono);font-size:11.5px;color:var(--jade);
+  border-bottom:1px solid var(--jade-dim);padding-bottom:1px;white-space:nowrap;
+}
+.capbar-viewall:hover{color:var(--snow);border-color:var(--snow)}
+.capbar-chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.capbar-chip{
+  font-family:var(--mono);font-size:11.5px;color:var(--clay);
+  border:1px solid var(--clay);padding:2px 10px;transition:background .16s ease;
+}
+.capbar-chip:hover{background:rgba(194,80,60,.16);color:var(--snow)}
+
 
 /* ── 版面 ── */
 .board{
-  display:grid;grid-template-columns:minmax(300px,440px) 1fr;
+  display:grid;grid-template-columns:minmax(520px,1.15fr) minmax(420px,.85fr);
+  align-items:start;
   gap:1px;background:var(--line);border:1px solid var(--line);
   margin-top:clamp(24px,3.6vw,44px);
 }
@@ -87,33 +176,81 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .head-note{font-family:var(--mono);font-size:11.5px;color:var(--moss)}
 
-/* ── 地圖 ── */
+/* ── 地圖（3D 立體地形）── */
 .map-stage{padding:clamp(10px,1.6vw,20px)}
-#map{width:100%;height:auto;display:block;max-height:72vh}
-.coast{fill:#18211C;stroke:rgba(124,164,138,.55);stroke-width:1.4}
-.ridge{fill:rgba(124,164,138,.09);stroke:none}
 
-.marker{cursor:pointer}
-.marker circle.dot{stroke:#0F1613;stroke-width:1;transition:opacity .2s ease}
-.marker circle.halo{fill:none;stroke-width:1.4;opacity:0;transition:opacity .2s ease}
-.marker.s-watch  circle.dot{fill:var(--clay);fill-opacity:.85}
-.marker.s-watch  circle.halo{stroke:var(--clay)}
-.marker.s-stable circle.dot{fill:var(--ochre);fill-opacity:.8}
-.marker.s-stable circle.halo{stroke:var(--ochre)}
-.marker.s-gone   circle.dot{fill:var(--moss);fill-opacity:.4}
-.marker.s-gone   circle.halo{stroke:var(--moss)}
-.marker:hover circle.halo,
-.marker.is-active circle.halo,
-.marker:focus-visible circle.halo{opacity:1}
-.marker.is-active circle.dot{fill-opacity:1}
-.marker:focus-visible{outline:none}
-.marker.is-dim{opacity:.1;pointer-events:none}
-.marker text{
-  font-family:var(--mono);font-size:11px;fill:var(--snow);
-  opacity:0;transition:opacity .18s ease;paint-order:stroke;
-  stroke:#0F1613;stroke-width:3px;
+.map3d-wrap{
+  position:relative;width:100%;aspect-ratio:0.59;max-height:72vh;
+  background:radial-gradient(120% 100% at 50% 20%,rgba(63,169,160,.06),transparent 60%);
+  border:1px solid var(--line);overflow:hidden;
 }
-.marker:hover text,.marker.is-active text{opacity:1}
+.map3d-wrap canvas{width:100%;height:100%;display:block;cursor:grab}
+.map3d-wrap.is-dragging canvas{cursor:grabbing}
+
+.map3d-labels{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.map3d-label{
+  position:absolute;top:0;left:0;transform:translate(-9999px,-9999px);
+  font-family:var(--mono);font-size:11px;color:var(--snow);
+  text-shadow:0 0 4px #0F1613,0 0 4px #0F1613,0 0 6px #0F1613;
+  white-space:nowrap;opacity:0;transition:opacity .18s ease;
+  margin-left:9px;margin-top:-6px;
+}
+.map3d-label.is-visible{opacity:1}
+.map3d-label.is-dim{opacity:0!important}
+
+.map3d-hint{
+  position:absolute;top:10px;right:10px;z-index:3;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--moss);
+  border:1px solid var(--line-strong);background:rgba(15,22,19,.55);
+  padding:5px 10px;backdrop-filter:blur(3px);transition:color .16s ease,border-color .16s ease;
+}
+.map3d-hint:hover{color:var(--snow);border-color:var(--jade-dim)}
+
+.map3d-fullscreen{
+  position:absolute;right:10px;bottom:10px;z-index:3;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--moss);
+  border:1px solid var(--line-strong);background:rgba(15,22,19,.55);
+  padding:5px 10px;backdrop-filter:blur(3px);transition:color .16s ease,border-color .16s ease;
+}
+.map3d-fullscreen:hover{color:var(--snow);border-color:var(--jade-dim)}
+.map3d-wrap.is-fullscreen{background:var(--abyss)}
+.map3d-fallback{
+  padding:24px;font-size:13px;color:var(--moss);line-height:1.8;
+  display:flex;align-items:center;height:100%;
+}
+
+/* 圖層控制（任務六） */
+.layer-control{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:rgba(15,22,19,.72);border:1px solid var(--line-strong);
+  padding:9px 11px;font-family:var(--mono);font-size:11px;color:var(--fog);
+  backdrop-filter:blur(3px);
+}
+.layer-control .lc-title{
+  color:var(--moss);letter-spacing:.1em;font-size:9.5px;text-transform:uppercase;
+  margin-bottom:6px;display:block;
+}
+.layer-control label{display:flex;align-items:center;gap:7px;margin-top:5px;cursor:pointer;white-space:nowrap}
+.layer-control input{accent-color:var(--jade)}
+
+/* CAP 示警範圍示意提醒（避免被誤認為正式淹水模擬） */
+.cap-preview-note{
+  position:absolute;bottom:10px;left:10px;right:10px;z-index:2;
+  font-family:var(--mono);font-size:10px;color:var(--moss);
+  background:rgba(15,22,19,.72);border:1px solid var(--line-strong);
+  padding:5px 9px;backdrop-filter:blur(3px);
+}
+
+/* 地圖 hover 資訊卡（任務十一）：只放摘要，不放完整 CAP 內容 */
+.map-hover-card{
+  position:absolute;top:0;left:0;z-index:3;pointer-events:none;
+  background:rgba(15,22,19,.92);border:1px solid var(--line-strong);
+  padding:10px 12px;min-width:150px;
+}
+.map-hover-card .hc-name{font-weight:700;color:var(--snow);font-size:13px;margin-bottom:3px}
+.map-hover-card .hc-meta{font-family:var(--mono);font-size:11px;color:var(--moss);line-height:1.7}
 
 .map-legend{
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;
@@ -131,24 +268,79 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .map-note{font-family:var(--mono);font-size:11px;color:var(--moss);margin-top:12px}
 
 /* ── 詳情 ── */
-.detail-panel{display:flex;flex-direction:column}
+.detail-panel{
+  display:flex;flex-direction:column;
+  max-height:calc(72vh + 130px);overflow-y:auto;
+}
 .detail-head{
-  display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
-  padding:clamp(18px,2.4vw,28px) clamp(16px,2.2vw,28px) 18px;
+  padding:clamp(18px,2.4vw,28px) clamp(16px,2.2vw,28px) 16px;
 }
-.grade{
-  font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-  border:1px solid var(--line-strong);color:var(--moss);
-  padding:3px 10px;align-self:center;white-space:nowrap;
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.badge{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  padding:3px 10px;white-space:nowrap;
 }
-.grade.s-watch{border-color:var(--clay);color:var(--clay)}
-.grade.s-stable{border-color:var(--ochre);color:var(--ochre)}
+/* 存續狀態：外框標籤 */
+.badge-status{border:1px solid var(--line-strong);color:var(--moss)}
+.badge-status.s-watch{border-color:var(--clay);color:var(--clay)}
+.badge-status.s-stable{border-color:var(--ochre);color:var(--ochre)}
+/* 風險等級：實心標籤，與存續狀態視覺區隔開來 */
+.badge-risk.is-high{background:var(--clay);color:var(--snow)}
+.badge-risk.is-low{background:var(--jade-dim);color:var(--snow)}
+.badge-risk.is-none{border:1px solid var(--ochre);color:var(--ochre)}
+.badge-risk.is-na{border:1px solid var(--line-strong);color:var(--moss)}
+/* CAP TEST：中性小標，避免與風險等級搶視覺 */
+.badge-cap{border:1px solid var(--line-strong);color:var(--moss)}
 .detail-head h1{
   font-family:var(--wide);font-variation-settings:'wdth' 108,'wght' 700;
-  font-size:clamp(23px,3.2vw,38px);color:var(--snow);line-height:1.15;
-  letter-spacing:-.01em;
+  font-size:clamp(22px,3vw,34px);color:var(--snow);line-height:1.2;
+  letter-spacing:-.01em;margin-bottom:4px;
 }
-.where{font-family:var(--mono);font-size:12px;color:var(--moss);padding-bottom:5px}
+.where{font-family:var(--mono);font-size:12px;color:var(--moss)}
+
+/* 快速決策摘要 */
+.decision-summary{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line)}
+.decision-summary .cell{padding:14px clamp(10px,1.6vw,18px);border-right:1px solid var(--line)}
+.decision-summary .cell:last-child{border-right:none}
+.decision-summary .num{font-size:clamp(18px,2vw,22px)}
+.decision-summary .num.risk-high{color:var(--clay)}
+
+/* 系統結論 */
+.conclusion{padding:16px clamp(16px,2.2vw,26px);border-top:1px solid var(--line);background:rgba(194,80,60,.05)}
+.conclusion .line1{font-weight:700;color:var(--snow);font-size:14.5px;margin-bottom:6px}
+.conclusion .line2,.conclusion .line3{font-size:13px;color:var(--fog);margin-bottom:3px}
+.conclusion .line3{color:var(--moss)}
+
+/* 建議行動卡 */
+.action-card{margin:16px clamp(16px,2.2vw,26px);padding:14px 16px;border-left:2px solid var(--jade-dim);background:rgba(63,169,160,.06)}
+.action-card .at{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--jade);text-transform:uppercase;margin-bottom:8px;display:block}
+.action-card ol{margin-left:18px;font-size:13.5px;color:var(--snow);line-height:1.9}
+
+/* 判定依據與限制卡 */
+.evidence-card{margin:0 clamp(16px,2.2vw,26px) 16px;border-top:1px solid var(--line);padding-top:16px}
+.evidence-card .et{
+  font-family:var(--wide);font-variation-settings:'wdth' 105,'wght' 700;
+  font-size:13px;color:var(--snow);margin-bottom:10px;
+}
+.evidence-row{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:12.5px;margin-bottom:10px}
+.evidence-row dt{color:var(--moss);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;white-space:nowrap;padding-top:2px}
+.evidence-row dd{color:var(--fog)}
+.evidence-list{margin-left:14px;color:var(--fog);font-size:13px;line-height:1.8}
+.limitation-note{
+  font-family:var(--mono);font-size:11.5px;color:var(--ochre);
+  border-top:1px dashed var(--line-strong);margin-top:10px;padding-top:10px;line-height:1.9;
+}
+
+/* 基本資料：收合區塊，套用與 narr-rules 一致的展開樣式 */
+.basic-facts{border-top:1px solid var(--line);padding:14px clamp(16px,2.2vw,26px)}
+.basic-facts summary{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--moss);cursor:pointer;list-style:none;
+}
+.basic-facts summary::before{content:"▸ ";color:var(--jade)}
+.basic-facts[open] summary::before{content:"▾ "}
+.basic-facts summary:hover{color:var(--fog)}
+.basic-facts .readout{margin-top:12px}
 
 .readout{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
 .readout .cell{padding:18px clamp(14px,2vw,24px);border-right:1px solid var(--line)}
@@ -174,6 +366,22 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .facts dd.muted{color:var(--moss)}
 
 /* ── 年度分布 ── */
+/* ── 年度分布：收合為輔助洞察（任務十），summary 的展開視覺沿用 narr-rules 邏輯 ── */
+.timeline-sec summary{
+  cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  padding-bottom:16px;
+}
+.timeline-sec summary::before{content:"▸ ";color:var(--jade);font-family:var(--mono)}
+.timeline-sec[open] summary::before{content:"▾ "}
+.timeline-sec summary h2{
+  font-family:var(--wide);font-variation-settings:'wdth' 105,'wght' 600;
+  font-size:17px;color:var(--snow);
+}
+.timeline-sec summary:hover h2{color:var(--fog)}
+.timeline-sec summary:focus-visible{outline:1px solid var(--jade);outline-offset:2px}
+.timeline-sec summary .count{font-family:var(--mono);font-size:11.5px;color:var(--moss)}
+.insight-text{font-size:12.5px;color:var(--moss);margin-top:12px;line-height:1.8;max-width:64ch}
+
 .timeline-panel{padding:clamp(16px,2vw,24px)}
 #timeline{width:100%;height:auto;display:block}
 .tl-bar{cursor:pointer;transition:opacity .18s ease}
@@ -216,6 +424,33 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .reset:hover{color:var(--snow);border-color:var(--snow)}
 
+.county-select{
+  background:var(--stone);border:1px solid var(--line);color:var(--fog);
+  font-family:var(--mono);font-size:11.5px;padding:5px 8px;min-width:110px;
+}
+.county-select:focus-visible{outline:1px solid var(--jade);outline-offset:-1px}
+
+.search-input{
+  background:var(--stone);border:1px solid var(--line);color:var(--fog);
+  font-family:var(--mono);font-size:11.5px;padding:5px 10px;min-width:200px;
+}
+.search-input::placeholder{color:var(--moss)}
+.search-input:focus-visible{outline:1px solid var(--jade);outline-offset:-1px}
+
+.cap-toggle-label{
+  display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;
+  color:var(--moss);cursor:pointer;white-space:nowrap;padding:5px 0;
+}
+.cap-toggle-label input{accent-color:var(--jade)}
+
+/* 已啟用篩選條件的 chips，個別可清除 + 統一的「清除全部」按鈕 */
+.active-chips{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 16px}
+.chip{
+  font-family:var(--mono);font-size:11px;color:var(--jade);
+  border:1px solid var(--jade-dim);padding:3px 10px;transition:background .16s ease;
+}
+.chip:hover{background:rgba(63,169,160,.12);color:var(--snow)}
+
 /* ── 區段 ── */
 .sec{margin-top:clamp(32px,4.6vw,60px)}
 .sec-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -231,13 +466,14 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   max-height:640px;overflow-y:auto}
 .lake{
   background:var(--stone);padding:15px clamp(14px,2vw,24px);width:100%;
-  display:grid;grid-template-columns:52px 1fr minmax(90px,auto) minmax(96px,auto);
+  display:grid;grid-template-columns:52px 1fr minmax(90px,auto) minmax(104px,auto);
   gap:clamp(12px,2vw,26px);align-items:center;text-align:left;
   transition:background .16s ease;
 }
 .lake:hover{background:var(--raised)}
 .lake:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--jade)}
 .lake.is-active{background:var(--raised);box-shadow:inset 3px 0 0 var(--jade)}
+.lake.is-preview{background:var(--raised);box-shadow:inset 2px 0 0 var(--moss)}
 .lake .yr{
   font-family:var(--wide);font-variation-settings:'wdth' 108,'wght' 700;
   font-size:15px;color:var(--moss);font-feature-settings:'tnum';
@@ -248,6 +484,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .lake .vol{text-align:right}
 .lake .vol .num{font-size:17px}
 .lake .vol .u{font-family:var(--mono);font-size:10.5px;color:var(--moss);margin-left:4px}
+.pills{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 .pill{
   font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
   padding:2px 9px;border:1px solid var(--line-strong);color:var(--moss);
@@ -255,9 +492,12 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .pill.s-watch{border-color:var(--clay);color:var(--clay)}
 .pill.s-stable{border-color:var(--ochre);color:var(--ochre)}
+.pill.risk-pill.is-high{background:var(--clay);color:var(--snow);border-color:var(--clay)}
+.pill.risk-pill.is-low{background:var(--jade-dim);color:var(--snow);border-color:var(--jade-dim)}
+.pill.risk-pill.is-none{border-color:var(--ochre);color:var(--ochre)}
+.pill.risk-pill.is-na{border-color:var(--line-strong);color:var(--moss)}
 
-/* ── 成因敘述 ── */
-.narrative{border-top:1px solid var(--line);padding:clamp(16px,2.2vw,26px)}
+/* ── 成因敘述（重用於判定依據卡與 CAP 技術層的展開區塊）── */
 .narr-text{font-size:14.5px;line-height:1.95;color:var(--fog);max-width:60ch}
 .narr-empty{font-size:13.5px;color:var(--moss)}
 .narr-rules{margin-top:14px}
@@ -276,6 +516,61 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 }
 .narr-rules li::before{content:"·";position:absolute;left:2px;color:var(--jade-dim)}
 
+/* ── CAP 示警草稿（詳情面板） ── */
+.cap-block{border-top:1px solid var(--line);padding:clamp(16px,2.2vw,26px)}
+.cap-summary-card{
+  border:1px solid var(--line-strong);background:rgba(255,255,255,.02);
+  padding:14px 16px;
+}
+.cs-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cs-title{
+  font-family:var(--wide);font-variation-settings:'wdth' 105,'wght' 700;
+  font-size:13.5px;color:var(--snow);
+}
+.cap-status-test{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  color:var(--abyss);background:var(--ochre);padding:2px 8px;text-transform:uppercase;
+}
+.cs-row{font-size:13px;color:var(--fog);margin-bottom:4px}
+.cs-row b{color:var(--snow);font-weight:500}
+.cap-primary-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.cap-btn{
+  font-family:var(--mono);font-size:11.5px;padding:6px 14px;
+  border:1px solid var(--jade-dim);color:var(--jade);transition:background .16s ease;
+}
+.cap-btn:hover{background:rgba(63,169,160,.12);color:var(--snow)}
+.cap-btn:disabled{border-color:var(--line-strong);color:var(--moss);cursor:not-allowed}
+.cap-btn.ghost{border-color:var(--line-strong);color:var(--moss)}
+.cap-btn.ghost:hover{color:var(--fog);background:transparent}
+.cap-disclaimer{font-family:var(--mono);font-size:10.5px;color:var(--moss);margin-top:10px}
+
+/* 技術層：沿用 .narr-rules 的展開視覺，內縮一層以呈現層級 */
+.cap-tech{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+
+.cap-fields{
+  display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:6px;
+  margin-bottom:14px;padding:12px 14px;border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+}
+.cap-field{display:contents}
+.cap-field dt{
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--moss);
+  white-space:nowrap;padding-top:1px;
+}
+.cap-field dd{margin:0;font-size:13px;color:var(--fog)}
+
+.cap-text-block{margin-bottom:12px}
+.cap-text-label{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--moss);margin-bottom:3px;
+}
+.cap-desc{font-size:13.5px;line-height:1.9;color:var(--fog);max-width:62ch;margin:0}
+.cap-instruction{
+  font-size:13.5px;line-height:1.9;color:var(--snow);max-width:62ch;margin:0;
+  padding:10px 12px;border-left:2px solid var(--jade-dim);background:rgba(63,169,160,.06);
+}
+.cap-basis{margin-bottom:14px}
+
 .empty{
   padding:30px;text-align:center;color:var(--moss);font-size:14px;
   border:1px dashed var(--line-strong);background:var(--stone);
@@ -290,23 +585,46 @@ footer .wrap{
 }
 
 /* ── 響應式 ── */
-@media (max-width:1100px){
+/* 平板 768～1199px：地圖與詳情改上下排列，地圖在前 */
+@media (max-width:1199px){
   .board{grid-template-columns:1fr}
-  #map{max-height:54vh}
+  .detail-panel{max-height:none;overflow-y:visible}
+}
+/* 手機 <768px：地圖高度控制在 55~65vh 之間 */
+@media (max-width:767px){
+  .map3d-wrap{max-height:60vh}
+  .filterbar{gap:14px}
+  .search-input{min-width:0;flex:1}
 }
 @media (max-width:860px){
   .lake{grid-template-columns:44px 1fr;row-gap:10px}
   .lake .vol{text-align:left;grid-column:2}
-  .pill{grid-column:2}
+  .pills{grid-column:2;flex-direction:row;flex-wrap:wrap}
   .facts{grid-template-columns:1fr}
   .facts dt{border-bottom:none;padding-bottom:0}
   .facts dd{padding-left:clamp(12px,1.6vw,20px)}
+  .cap-fields{grid-template-columns:1fr}
+  .cap-field dt{padding-top:6px}
 }
 @media (max-width:720px){
   .readout{grid-template-columns:1fr}
   .readout .cell{border-right:none;border-bottom:1px solid var(--line)}
   .readout .cell:last-child{border-bottom:none}
+  .decision-summary{grid-template-columns:repeat(2,1fr)}
+  .decision-summary .cell:nth-child(2){border-right:none}
+  .decision-summary .cell:nth-child(3),.decision-summary .cell:nth-child(4){border-top:1px solid var(--line)}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
+
+/* ── 短暫成功提示（任務十三，例如 CAP XML 下載完成）── */
+.toast{
+  position:fixed;left:50%;bottom:28px;z-index:100;
+  transform:translate(-50%,12px);opacity:0;
+  background:var(--raised);border:1px solid var(--jade-dim);color:var(--snow);
+  font-family:var(--mono);font-size:12.5px;padding:9px 16px;
+  transition:opacity .2s ease,transform .2s ease;
+  pointer-events:none;
+}
+.toast.is-visible{opacity:1;transform:translate(-50%,0)}

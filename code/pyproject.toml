@@ -8,8 +8,9 @@ version = "0.1.0"
 description = "堰塞湖快速評估管線 · OSSInt 2026"
 requires-python = ">=3.10"
 dependencies = [
-    "pyproj>=3.6",   # TWD97 TM2 → WGS84 座標轉換
-    "pyyaml>=6.0",   # 句型庫
+    "pyproj>=3.6",    # TWD97 TM2 → WGS84 座標轉換
+    "pyyaml>=6.0",    # 句型庫
+    "requests>=2.31", # CWA 即時雨量介接
 ]
 
 [project.optional-dependencies]
@@ -20,6 +21,7 @@ dev = ["pytest>=8.0"]
 [project.scripts]
 ossint-inventory = "pipeline.ingest.inventory:cli"
 ossint-annotate = "pipeline.attribution.annotate:main"
+ossint-risk-live = "pipeline.ingest.risk_live:cli"
 
 [tool.setuptools.packages.find]
 include = ["pipeline*"]

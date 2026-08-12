@@ -11,16 +11,67 @@
 </head>
 <body>
 
-<!-- 狀態列 -->
+<!-- 第一層：系統名稱與資料狀態 -->
 <div class="statusbar">
   <div class="wrap">
-    <span class="sysname"><span class="pulse"></span>全台堰塞湖清冊</span>
-    <div class="stat"><span class="label">總計</span><b data-bind="countAll">—</b></div>
-    <div class="stat"><span class="label">監測中</span><b data-bind="countWatch">—</b></div>
-    <div class="stat"><span class="label">存在已穩定</span><b data-bind="countStable">—</b></div>
-    <div class="stat"><span class="label">已消失</span><b data-bind="countGone">—</b></div>
+    <span class="sysname"><span class="pulse"></span>堰塞湖快速評估系統</span>
+    <span class="stat-meta">風險快照：<b data-bind="riskSnapshotDate">—</b></span>
+    <span class="stat-meta">風險資料來源：<b data-bind="riskSource">農村水保署／ERA5-Land</b></span>
     <span class="spacer"></span>
-    <div class="stat"><span class="label">資料來源</span><b>農村水保署清冊</b></div>
+    <span class="stat-meta">清冊總計 <b data-bind="countAll">—</b> 處</span>
+  </div>
+</div>
+
+<!-- 即時雨量：在瀏覽器端直接呼叫 CWA API，金鑰只留在這台電腦（可選擇是否記住） -->
+<div class="livebar">
+  <div class="wrap livebar-inner">
+    <span class="livebar-label">CWA 即時雨量</span>
+    <input type="password" id="cwaKeyInput" class="livebar-input"
+           placeholder="貼上你的 CWA-XXXXXXXX-... 授權碼" autocomplete="off">
+    <label class="livebar-remember">
+      <input type="checkbox" id="cwaKeyRemember">記住這台電腦
+    </label>
+    <button class="livebar-btn" id="cwaFetchBtn" type="button">更新即時風險</button>
+    <span class="livebar-status" id="liveStatus">尚未更新，目前顯示的是打包時的批次快照。</span>
+    <span class="capbar-info" tabindex="0"
+          title="在你的瀏覽器裡直接呼叫 CWA 開放資料 API，金鑰只存在這台電腦（勾選「記住」才會寫進瀏覽器本機儲存），不會送到任何第三方伺服器。留空按「更新」會改用訓練平均值 offline 佔位。">i</span>
+  </div>
+</div>
+
+<!-- 第二層：全台風險概況 KPI -->
+<div class="kpi-bar">
+  <div class="wrap kpi-grid">
+    <div class="kpi-card">
+      <span class="label">監測中</span>
+      <b class="num" data-bind="countWatch">—</b>
+      <span class="sub">現況仍持續存在</span>
+    </div>
+    <div class="kpi-card kpi-danger">
+      <span class="label">高風險</span>
+      <b class="num" data-bind="countHighRisk">—</b>
+      <span class="sub">模型判高風險＋現況把關後仍成立</span>
+    </div>
+    <div class="kpi-card kpi-warning">
+      <span class="label">待補評估</span>
+      <b class="num" data-bind="countUnassessed">—</b>
+      <span class="sub">尚無風險模型結果，非低風險</span>
+    </div>
+    <div class="kpi-card">
+      <span class="label">已穩定／已消失</span>
+      <b class="num" data-bind="countStableOrGone">—</b>
+      <span class="sub">歷史清冊，次要統計</span>
+    </div>
+  </div>
+</div>
+
+<!-- CAP 示警橫幅：僅在有高風險湖泊時顯示 -->
+<div class="capbar" id="capBar" hidden>
+  <div class="wrap capbar-inner">
+    <span class="capbar-badge">CAP 示警</span>
+    <span class="capbar-text" data-bind="capBarText">—</span>
+    <span class="capbar-info" tabindex="0" title="批次風險快照，非現地實測，詳見各湖 CAP 區塊">i</span>
+    <button class="capbar-viewall" id="capBarViewAll" type="button">查看全部</button>
+    <div class="capbar-chips" id="capBarChips"></div>
   </div>
 </div>
 
@@ -36,17 +87,25 @@
       </div>
 
       <div class="map-stage">
-        <svg id="map" viewBox="0 0 460 780" role="img"
-             aria-label="台灣平面圖，標示歷年堰塞湖位置">
-          <defs>
-            <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse">
-              <path d="M46 0 L0 0 0 46" fill="none" stroke="rgba(202,216,206,.07)" stroke-width="1"/>
-            </pattern>
-          </defs>
-          <rect x="0" y="0" width="460" height="780" fill="url(#grid)"/>
-          <g id="mapBase"></g>
-          <g id="mapMarkers"></g>
-        </svg>
+        <div class="map3d-wrap" id="map3dWrap">
+          <canvas id="map3dCanvas" aria-label="台灣立體地形圖，標示歷年堰塞湖位置" role="img"></canvas>
+          <div class="map3d-labels" id="map3dLabels"></div>
+
+          <div class="layer-control" role="group" aria-label="地圖圖層控制">
+            <span class="lc-title">圖層</span>
+            <label><input type="checkbox" id="layerPoints" checked>堰塞湖點位</label>
+            <label><input type="checkbox" id="layerHighRisk" checked>高風險標記</label>
+            <label><input type="checkbox" id="layerCapArea" checked>CAP 示警範圍</label>
+            <label><input type="checkbox" id="layerLabels">點位名稱</label>
+          </div>
+          <div class="cap-preview-note">暫以壩址周圍 3 km 示意，非正式淹水模擬範圍</div>
+
+          <div class="map-hover-card" id="mapHoverCard" hidden></div>
+
+          <button class="map3d-hint" id="map3dReset" type="button">拖曳旋轉 · 右鍵/Shift 拖曳平移 · 滾輪縮放 · 點一下回正</button>
+
+          <button class="map3d-fullscreen" id="map3dFullscreen" type="button" aria-label="全螢幕檢視地圖">全螢幕</button>
+        </div>
 
         <div class="map-legend">
           <span><i class="key k-watch"></i>監測中</span>
@@ -60,46 +119,46 @@
 
     <div class="panel detail-panel">
       <div class="detail-head">
-        <span class="grade" data-bind="status">—</span>
+        <div class="badges">
+          <span class="badge badge-status" data-bind="statusBadge">—</span>
+          <span class="badge badge-risk" data-bind="riskBadge" hidden></span>
+          <span class="badge badge-cap" hidden>CAP TEST</span>
+        </div>
         <h1 data-bind="name">—</h1>
         <span class="where" data-bind="where">—</span>
       </div>
 
-      <div class="readout">
-        <div class="cell">
-          <span class="label">蓄水量</span>
-          <div><span class="num" data-bind="volume">—</span><span class="unit">萬 m³</span></div>
-          <div class="sub" data-bind="volumeNote">—</div>
-        </div>
-        <div class="cell">
-          <span class="label">形成年度</span>
-          <div><span class="num" data-bind="year">—</span></div>
-          <div class="sub" data-bind="formed">—</div>
-        </div>
-        <div class="cell">
-          <span class="label">持續時間</span>
-          <div><span class="num" data-bind="duration">—</span><span class="unit" data-bind="durationUnit"></span></div>
-          <div class="sub" data-bind="durationNote">—</div>
-        </div>
-      </div>
+      <div class="decision-summary" id="decisionSummary"></div>
 
-      <dl class="facts" id="facts"></dl>
+      <div class="conclusion" id="conclusion"></div>
 
-      <div class="narrative" id="narrative"></div>
-    </div>
-  </section>
+      <div class="action-card" id="actionCard"></div>
 
-  <!-- 年度分布 -->
-  <section class="sec">
-    <div class="sec-head">
-      <h2>年度分布</h2>
-      <span class="rule"></span>
-      <span class="count">1979 – 2026 · 點選年份篩選</span>
-    </div>
-    <div class="panel timeline-panel">
-      <svg id="timeline" viewBox="0 0 1200 260" role="img"
-           aria-label="各年度堰塞湖形成數量長條圖"></svg>
-      <p class="map-note" data-bind="timelineNote">—</p>
+      <div class="evidence-card" id="evidenceCard"></div>
+
+      <details class="basic-facts">
+        <summary>基本資料</summary>
+        <div class="readout">
+          <div class="cell">
+            <span class="label">蓄水量</span>
+            <div><span class="num" data-bind="volume">—</span><span class="unit">萬 m³</span></div>
+            <div class="sub" data-bind="volumeNote">—</div>
+          </div>
+          <div class="cell">
+            <span class="label">形成年度</span>
+            <div><span class="num" data-bind="year">—</span></div>
+            <div class="sub" data-bind="formed">—</div>
+          </div>
+          <div class="cell">
+            <span class="label">持續時間</span>
+            <div><span class="num" data-bind="duration">—</span><span class="unit" data-bind="durationUnit"></span></div>
+            <div class="sub" data-bind="durationNote">—</div>
+          </div>
+        </div>
+        <dl class="facts" id="facts"></dl>
+      </details>
+
+      <div class="cap-block" id="capBlock"></div>
     </div>
   </section>
 
@@ -115,30 +174,71 @@
       <div class="filter-group" role="group" aria-label="依存續狀態篩選">
         <span class="label">存續狀態</span>
         <div class="filters">
-          <button class="filter is-on" data-kind="status" data-val="all">全部</button>
-          <button class="filter" data-kind="status" data-val="watch">監測中</button>
-          <button class="filter" data-kind="status" data-val="stable">已穩定</button>
-          <button class="filter" data-kind="status" data-val="gone">已消失</button>
+          <button class="filter is-on" type="button" data-kind="status" data-val="all">全部</button>
+          <button class="filter" type="button" data-kind="status" data-val="watch">監測中</button>
+          <button class="filter" type="button" data-kind="status" data-val="stable">已穩定</button>
+          <button class="filter" type="button" data-kind="status" data-val="gone">已消失</button>
+        </div>
+      </div>
+      <div class="filter-group" role="group" aria-label="依風險等級篩選">
+        <span class="label">風險等級</span>
+        <div class="filters">
+          <button class="filter is-on" type="button" data-kind="risk" data-val="all">全部</button>
+          <button class="filter" type="button" data-kind="risk" data-val="high">高風險</button>
+          <button class="filter" type="button" data-kind="risk" data-val="low">低風險</button>
+          <button class="filter" type="button" data-kind="risk" data-val="none">尚無評估</button>
         </div>
       </div>
       <div class="filter-group" role="group" aria-label="依誘因篩選">
         <span class="label">誘因</span>
         <div class="filters">
-          <button class="filter is-on" data-kind="cause" data-val="all">全部</button>
-          <button class="filter" data-kind="cause" data-val="quake">地震</button>
-          <button class="filter" data-kind="cause" data-val="typhoon">颱風</button>
-          <button class="filter" data-kind="cause" data-val="rain">降雨</button>
-          <button class="filter" data-kind="cause" data-val="slide">崩塌</button>
+          <button class="filter is-on" type="button" data-kind="cause" data-val="all">全部</button>
+          <button class="filter" type="button" data-kind="cause" data-val="quake">地震</button>
+          <button class="filter" type="button" data-kind="cause" data-val="typhoon">颱風</button>
+          <button class="filter" type="button" data-kind="cause" data-val="rain">降雨</button>
+          <button class="filter" type="button" data-kind="cause" data-val="slide">崩塌</button>
         </div>
       </div>
-      <button class="reset" id="resetBtn" hidden>清除篩選</button>
+      <div class="filter-group">
+        <span class="label">縣市</span>
+        <select id="countySelect" class="county-select" aria-label="依縣市篩選">
+          <option value="all">全部縣市</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="label">關鍵字</span>
+        <input type="search" id="searchInput" class="search-input" placeholder="名稱、縣市、鄉鎮、地標…" aria-label="關鍵字搜尋">
+      </div>
+      <div class="filter-group">
+        <span class="label">CAP</span>
+        <label class="cap-toggle-label"><input type="checkbox" id="hasCapToggle">只看有 CAP 草稿</label>
+      </div>
+      <button class="reset" id="resetBtn" type="button" hidden>清除全部</button>
     </div>
+
+    <div class="active-chips" id="activeChips"></div>
 
     <div class="lakes" id="lakeList"></div>
     <div class="empty" id="listEmpty" hidden>
       <b>沒有符合條件的紀錄</b>
-      放寬篩選條件，或清除年份選取。
+      放寬篩選條件，或按「清除全部」再試一次。
     </div>
+  </section>
+
+  <!-- 年度分布：降級為輔助洞察，預設收合，不佔據第一屏 -->
+  <section class="sec">
+    <details class="timeline-sec">
+      <summary>
+        <h2 style="display:inline">年度分布（輔助分析）</h2>
+        <span class="count">1979 – 2026 · 點選年份篩選</span>
+      </summary>
+      <div class="panel timeline-panel">
+        <svg id="timeline" viewBox="0 0 1200 260" role="img"
+             aria-label="各年度堰塞湖形成數量長條圖"></svg>
+        <p class="map-note" data-bind="timelineNote">—</p>
+        <p class="insight-text">歷史高峰主要集中於重大地震與颱風事件年份。目前圖表反映清冊登載數量，不代表各年度災害嚴重程度。</p>
+      </div>
+    </details>
   </section>
 
 </main>
@@ -151,6 +251,12 @@
 </footer>
 
 <script src="data/lakes.js"></script>
+<script src="data/risk.js"></script>
+<script src="data/terrain.js"></script>
+<script src="cap.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="map3d.js"></script>
 <script src="app.js"></script>
+<script src="live.js"></script>
 </body>
 </html>
