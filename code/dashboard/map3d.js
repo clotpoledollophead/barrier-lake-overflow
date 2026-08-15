@@ -14,12 +14,14 @@
    對外 API（window.Map3D）：
      Map3D.init(canvasEl, labelsEl, handlers)
      Map3D.setLakes(lakes)                 // 建立所有標記（僅需呼叫一次）
-     Map3D.sync({ selectedId, visibleIds, highRiskIds })
+     Map3D.sync({ selectedId, visibleIds, highRiskIds, capArea })
      Map3D.hoverMarker(id) / Map3D.unhoverMarker(id)
      Map3D.resize()
 
-   這裡不做任何「新的地理判斷」——地形形狀完全來自 terrain.js 的網格資料，
-   標記位置完全來自既有清冊的 lon/lat；本檔只負責把這些既有資料畫成 3D。
+   地形形狀完全來自 terrain.js 的網格資料，標記位置完全來自既有清冊的
+   lon/lat；本檔本身不做「新的地理判斷」。CAP 示警範圍是唯一的例外：
+   有 pipeline.assess.run 算出的淹沒多邊形時會畫出該形狀（見
+   setCapArea/applyCapAreaVisibility），沒有時才退回固定半徑示意圈。
    ════════════════════════════════════════ */
 
 'use strict';
@@ -39,6 +41,8 @@ const Map3D = (() => {
     jade:      0x3FA9A0,   // --jade（hover/select 光環）
     alert:     0xF5D547,   // 高風險警示環專用亮黃色，刻意跟監測中的紅點區隔開
     locate:    0x38E1FF,   // 垂直定位線專用亮青色，純粹是「這裡有東西」的視覺提示，跟狀態色無關
+    trigger:   0xC98A2E,   // 觸發任務 AOI 專用色（= --ochre），跟 CAP 範圍的 jade 區隔開，
+                           // 因為兩者可能同時畫在地圖上（觸發任務跟被選取的湖是不同概念）
   };
 
   let renderer, scene, camera, canvas, labelsEl, wrapEl;
@@ -74,11 +78,18 @@ const Map3D = (() => {
 
   /* 圖層開關狀態（對應任務六的圖層控制 UI）。
      points/highRisk 直接套用在既有標記上；capArea 是「選取事件時才畫出
-     的 CAP 示警範圍圈」，跟每個標記常駐的 highRisk 環是兩件事；
+     的 CAP 示警範圍圈／淹沒多邊形」，跟每個標記常駐的 highRisk 環是兩件事；
      labels 開啟時強制顯示全部點位名稱，off 時維持原本只在 hover/選取時顯示。 */
-  let layers = { points: true, highRisk: true, capArea: true, labels: false };
-  let capAreaRing = null;
-  let lastCapArea = null; // { lakeId, radiusKm } | null
+  let layers = { points: true, highRisk: true, capArea: true, labels: false, triggerAreas: true };
+  let capAreaRing = null;      // 沒有淹沒多邊形時的固定半徑示意圈（circle 版）
+  let capPolygonMesh = null;   // 有淹沒多邊形時的實際形狀（polygon 版，取代上面那個圈）
+  let capPolygonBorder = null;
+  let lastCapArea = null; // { lakeId, radiusKm, polygon } | null；polygon 為 [[lon,lat],...] 或 null
+
+  let triggerTasksData = [];   // pipeline.trigger.service 產生的 window.TRIGGER_TASKS（見 setTriggerAreas）
+  let triggerAreaGroups = [];  // 目前畫在場景裡的 AOI 圈（跟 CAP 範圍圈不同：可以同時畫很多個，
+                                // 不是只有「目前選取的湖」才有一個）
+  let currentSelectedTriggerId = null;
 
   function lerp(a, b, t) { return a + (b - a) * t; }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -334,25 +345,22 @@ const Map3D = (() => {
     });
   }
 
-  /* ── CAP 示警範圍圈（任務六：選取事件時才畫出，未選取時不畫全部）──
-     只是把 cap.js 既有的示意半徑（預設 3km）畫成地面上的一塊區域，
-     不代表任何新的地理判斷，也不是淹沒模擬——UI 端另有文字提醒使用者這點。
-     比照氣象警報圖的畫法：半透明實心色塊 + 較粗外框，而不是一條細線，
-     這樣「這一圈是示警範圍」的視覺語意才會成立。 */
+  /* ── CAP 示警範圍（任務六 + 淹沒多邊形接入）──────────
+     兩種畫法共用同一組視覺語意（比照氣象警報圖：半透明實心色塊 + 較粗外框）：
+       · 有淹沒多邊形（pipeline.assess.run 算出來的）時，畫多邊形本身的形狀。
+         這是「真的」形狀計算結果，但若其 method 為 synthetic_demo_dem，
+         代表地形是合成示範資料——UI 端（app.js renderEvidenceCard）
+         另外用文字揭露這件事，3D 地圖本身不重複畫警語。
+       · 沒有多邊形（湖泊不是 watch、或沒跑 assess）時，退回舊版固定半徑
+         示意圈，純粹表示「這裡有 CAP 示警」，不代表任何地理範圍判斷。 */
   function buildCapAreaRing() {
     const group = new THREE.Group();
 
     const fillGeo = new THREE.CircleGeometry(1, 64);
-    const fillMat = new THREE.MeshBasicMaterial({
-      color: COL.jade, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false,
-    });
-    const fill = new THREE.Mesh(fillGeo, fillMat);
+    const fill = new THREE.Mesh(fillGeo, capFillMat());
 
     const borderGeo = new THREE.RingGeometry(0.9, 1, 64);
-    const borderMat = new THREE.MeshBasicMaterial({
-      color: COL.jade, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false,
-    });
-    const border = new THREE.Mesh(borderGeo, borderMat);
+    const border = new THREE.Mesh(borderGeo, capBorderMat());
     // 群組本身會整體旋轉 -90°(貼地)，這裡在旋轉前沿本地 Z 軸墊高，
     // 旋轉後才會變成世界座標的「垂直方向微幅抬升」，避免跟 fill 共平面 z-fighting。
     border.position.z = 0.002;
@@ -364,11 +372,95 @@ const Map3D = (() => {
     return group;
   }
 
+  /* 圓圈用的材質是共用的一個 group（先旋轉再縮放平移即可）；多邊形每次
+     選取的湖不同、形狀不同，沒辦法比照圓圈只縮放，所以材質抽出來共用
+     實例，幾何體則每次重建。 */
+  let _capFillMat = null, _capBorderMat = null;
+  function capFillMat() {
+    if (!_capFillMat) {
+      _capFillMat = new THREE.MeshBasicMaterial({
+        color: COL.jade, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false,
+      });
+    }
+    return _capFillMat;
+  }
+  function capBorderMat() {
+    if (!_capBorderMat) {
+      _capBorderMat = new THREE.MeshBasicMaterial({
+        color: COL.jade, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false,
+      });
+    }
+    return _capBorderMat;
+  }
+
+  /* 多邊形頂點（[lon,lat] 陣列）→ 世界座標三角化網格（扇形三角化，
+     以形心為共同頂點）。淹沒範圍的邊界（來自 skimage.find_contours
+     再抽稀）通常接近星狀（相對形心大致單調），扇形三角化在這個前提下
+     足夠正確；不是通用多邊形三角化演算法，複雜的凹多邊形可能會畫錯，
+     但比固定圓圈更接近真實形狀已經是這次要達成的目標。 */
+  function polygonWorldPoints(lonLatPoints, y) {
+    return lonLatPoints.map(([lon, lat]) => {
+      const { x, z } = lonLatToWorld(lon, lat);
+      return new THREE.Vector3(x, y, z);
+    });
+  }
+
+  function buildPolygonFillGeometry(points3d) {
+    const centroid = points3d.reduce((acc, p) => acc.add(p.clone()), new THREE.Vector3())
+      .multiplyScalar(1 / points3d.length);
+    const positions = [];
+    for (let i = 0; i < points3d.length; i++) {
+      const a = points3d[i], b = points3d[(i + 1) % points3d.length];
+      positions.push(centroid.x, centroid.y, centroid.z, a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  function buildPolygonBorderGeometry(points3d) {
+    const positions = [];
+    points3d.forEach(p => positions.push(p.x, p.y, p.z));
+    positions.push(points3d[0].x, points3d[0].y, points3d[0].z); // 閉合
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    return geo;
+  }
+
+  function clearCapPolygon() {
+    if (capPolygonMesh) { scene.remove(capPolygonMesh); capPolygonMesh.geometry.dispose(); capPolygonMesh = null; }
+    if (capPolygonBorder) { scene.remove(capPolygonBorder); capPolygonBorder.geometry.dispose(); capPolygonBorder = null; }
+  }
+
   function applyCapAreaVisibility() {
     if (!capAreaRing) return;
-    if (!lastCapArea || !layers.capArea) { capAreaRing.visible = false; return; }
+
+    if (!lastCapArea || !layers.capArea) {
+      capAreaRing.visible = false;
+      clearCapPolygon();
+      return;
+    }
     const m = markers.get(lastCapArea.lakeId);
-    if (!m) { capAreaRing.visible = false; return; }
+    if (!m) {
+      capAreaRing.visible = false;
+      clearCapPolygon();
+      return;
+    }
+
+    if (lastCapArea.polygon && lastCapArea.polygon.length >= 3) {
+      capAreaRing.visible = false;
+      clearCapPolygon();
+      const y = m.group.position.y + 0.02;
+      const points3d = polygonWorldPoints(lastCapArea.polygon, y);
+      capPolygonMesh = new THREE.Mesh(buildPolygonFillGeometry(points3d), capFillMat());
+      capPolygonBorder = new THREE.LineLoop(buildPolygonBorderGeometry(points3d), capBorderMat());
+      scene.add(capPolygonMesh, capPolygonBorder);
+      return;
+    }
+
+    clearCapPolygon();
+    if (!lastCapArea.radiusKm) { capAreaRing.visible = false; return; }
     const radiusWorld = Math.max(0.05, kmToWorldUnits(lastCapArea.radiusKm));
     capAreaRing.position.set(m.group.position.x, m.group.position.y + 0.02, m.group.position.z);
     capAreaRing.scale.set(radiusWorld, radiusWorld, 1);
@@ -376,10 +468,94 @@ const Map3D = (() => {
   }
 
   /* lakeId=null 代表目前選取的事件沒有可示警的 CAP 範圍（例如尚無風險評估），
-     這時候就不畫圈，不要硬套一個沒有意義的範圍。 */
-  function setCapArea(lakeId, radiusKm) {
-    lastCapArea = lakeId ? { lakeId, radiusKm: radiusKm || 3 } : null;
+     這時候就不畫圈/多邊形，不要硬套一個沒有意義的範圍。
+     polygon 有值時優先畫多邊形，radiusKm 只在沒有多邊形時當退回方案用。 */
+  function setCapArea(lakeId, radiusKm, polygon) {
+    lastCapArea = lakeId ? { lakeId, radiusKm: radiusKm || 3, polygon: polygon || null } : null;
     applyCapAreaVisibility();
+  }
+
+  /* ── 觸發任務 AOI（架構文件 §04，任務：讓前端讀 trigger_tasks.js）──
+     跟上面的 CAP 範圍圈是不同的東西，畫法故意用不同顏色（COL.trigger）
+     區隔：CAP 範圍是「選取某個湖時才畫、綁在該湖標記上」的單一範圍；
+     觸發任務 AOI 是「不管有沒有選湖，只要圖層開著就全部畫出來」的
+     一組獨立範圍，中心可能是震央或雨量站座標，不一定剛好落在某個
+     堰塞湖標記上，所以不能沿用 CAP 範圍圈綁在 marker.group.position
+     的做法，改成直接用經緯度＋地形取樣算世界座標。 */
+  let _triggerFillMat = null, _triggerBorderMat = null;
+  function triggerFillMat() {
+    if (!_triggerFillMat) {
+      _triggerFillMat = new THREE.MeshBasicMaterial({
+        color: COL.trigger, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false,
+      });
+    }
+    return _triggerFillMat;
+  }
+  function triggerBorderMat() {
+    if (!_triggerBorderMat) {
+      _triggerBorderMat = new THREE.MeshBasicMaterial({
+        color: COL.trigger, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false,
+      });
+    }
+    return _triggerBorderMat;
+  }
+
+  function buildCircleAt(lat, lon, radiusKm) {
+    const { x, z } = lonLatToWorld(lon, lat);
+    const y = sampleElevation(lon, lat) * HEIGHT_SCALE + 0.03;
+    const radiusWorld = Math.max(0.05, kmToWorldUnits(radiusKm || 3));
+
+    const group = new THREE.Group();
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(1, 48), triggerFillMat());
+    const border = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), triggerBorderMat());
+    border.position.z = 0.002;
+    group.add(fill, border);
+    group.rotation.x = -Math.PI / 2;
+    group.position.set(x, y, z);
+    group.scale.set(radiusWorld, radiusWorld, 1);
+    group.visible = false;
+    scene.add(group);
+    return group;
+  }
+
+  function clearTriggerAreaGroups() {
+    triggerAreaGroups.forEach(g => {
+      scene.remove(g);
+      g.children.forEach(m => m.geometry && m.geometry.dispose());
+    });
+    triggerAreaGroups = [];
+  }
+
+  function applyTriggerAreaVisibility() {
+    clearTriggerAreaGroups();
+    if (!layers.triggerAreas) return;
+    triggerTasksData.forEach(t => {
+      if (t.centerLat == null || t.centerLon == null) return;
+      const group = buildCircleAt(t.centerLat, t.centerLon, t.radiusKm);
+      group.visible = true;
+      // 目前選取的任務用較亮的外框強調，其餘任務仍畫出但淡一點，
+      // 讓使用者一眼看出「這是我點的那個」而不是全部長得一樣。
+      const isActive = t.taskId === currentSelectedTriggerId;
+      group.children[1].material = group.children[1].material.clone();
+      group.children[1].material.opacity = isActive ? 0.95 : 0.5;
+      group.children[0].material = group.children[0].material.clone();
+      group.children[0].material.opacity = isActive ? 0.22 : 0.10;
+      triggerAreaGroups.push(group);
+    });
+  }
+
+  /* tasks：[{ taskId, centerLat, centerLon, radiusKm }, ...]，通常直接把
+     window.TRIGGER_TASKS 的 aoi 欄位攤平後傳進來（見 app.js）。
+     沒有資料（陣列空）時就是不畫，不用另外判斷。 */
+  function setTriggerAreas(tasks) {
+    triggerTasksData = Array.isArray(tasks) ? tasks : [];
+    applyTriggerAreaVisibility();
+  }
+
+  /* 高亮「目前選取的觸發任務」，null 代表沒有選取（全部用淡色畫）。 */
+  function setActiveTriggerTask(taskId) {
+    currentSelectedTriggerId = taskId || null;
+    applyTriggerAreaVisibility();
   }
 
   /* ── 圖層開關（任務六）────────────────────
@@ -394,11 +570,12 @@ const Map3D = (() => {
       m.label.classList.toggle('is-visible', layers.points && showLabel);
     });
     applyCapAreaVisibility();
+    applyTriggerAreaVisibility();
   }
 
 
-  /* capArea：{ lakeId, radiusKm } | null，代表目前選取事件是否要畫出
-     CAP 示警範圍圈；null 就是「沒有可用的 CAP 範圍」，不畫。 */
+  /* capArea：{ lakeId, radiusKm, polygon } | null，代表目前選取事件是否要畫出
+     CAP 示警範圍圈／淹沒多邊形；null 就是「沒有可用的 CAP 範圍」，不畫。 */
   function sync({ selectedId, visibleIds, highRiskIds, capArea }) {
     currentSelectedId = selectedId || null;
     markers.forEach((m, id) => {
@@ -419,7 +596,8 @@ const Map3D = (() => {
       m.capRing.visible = layers.highRisk && highRisk;
       if (m.ghostDot) m._ghostEligible = visible;
     });
-    setCapArea(capArea ? capArea.lakeId : null, capArea ? capArea.radiusKm : null);
+    setCapArea(capArea ? capArea.lakeId : null, capArea ? capArea.radiusKm : null,
+               capArea ? capArea.polygon : null);
   }
 
   function hoverMarker(id) {
@@ -759,5 +937,8 @@ const Map3D = (() => {
     animate();
   }
 
-  return { init, setLakes, sync, hoverMarker, unhoverMarker, setLayers, resize, resetView };
+  return {
+    init, setLakes, sync, hoverMarker, unhoverMarker, setLayers, resize, resetView,
+    setTriggerAreas, setActiveTriggerTask,
+  };
 })();

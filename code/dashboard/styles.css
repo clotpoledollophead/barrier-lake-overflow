@@ -267,6 +267,39 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .scale .sz-l{width:14px;height:14px;background:var(--moss)}
 .map-note{font-family:var(--mono);font-size:11px;color:var(--moss);margin-top:12px}
 
+/* ── 觸發事件面板（§04 觸發層，pipeline.trigger.service 產生的 trigger_tasks.js）── */
+.trigger-panel{
+  margin-top:14px;border:1px solid var(--line-strong);background:rgba(15,22,19,.5);
+}
+.tp-head{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:8px 11px;border-bottom:1px solid var(--line);
+}
+.tp-badge{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ochre);
+  border:1px solid var(--ochre);padding:1px 8px;text-transform:uppercase;white-space:nowrap;
+}
+.tp-text{font-family:var(--mono);font-size:11px;color:var(--fog)}
+.trigger-list{display:flex;flex-direction:column}
+.trigger-item{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:7px 11px;border-bottom:1px solid var(--line);cursor:pointer;
+  font-family:var(--mono);font-size:11px;color:var(--moss);
+  transition:background .14s ease;
+}
+.trigger-item:last-child{border-bottom:none}
+.trigger-item:hover{background:rgba(201,138,46,.10)}
+.trigger-item.is-active{background:rgba(201,138,46,.16);color:var(--snow)}
+.trigger-item .ti-type{color:var(--ochre);font-weight:600}
+.trigger-item .ti-priority-high{color:var(--clay)}
+.trigger-item .ti-nearby{color:var(--fog);margin-left:auto;text-align:right}
+.trigger-detail{
+  padding:9px 11px 11px;border-bottom:1px solid var(--line);
+  font-family:var(--sans);font-size:12px;color:var(--fog);line-height:1.7;
+}
+.trigger-detail .td-line{margin-bottom:4px}
+.trigger-detail .td-mono{font-family:var(--mono);font-size:11px;color:var(--moss)}
+
 /* ── 詳情 ── */
 .detail-panel{
   display:flex;flex-direction:column;

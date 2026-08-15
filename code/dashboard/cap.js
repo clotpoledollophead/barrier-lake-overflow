@@ -16,9 +16,22 @@
        且 risk_formula.txt 附的 0.927 AUC 是全資料擬合、非留出驗證，
        容易高估。因此 certainty 最高只給到 "Possible"，
        不給 "Likely" 或 "Observed"。
-     · 目前沒有淹沒範圍模擬（DEM 量化模組尚未完成），area 一律用
-       <circle> 以壩址座標＋保守半徑頂著，等 assess/ 模組做出多邊形
-       後再替換。
+     · area 優先用 pipeline.assess.run 產生的淹沒多邊形（見
+       dashboard/data/inundation.js／window.LAKE_INUNDATION）；沒有對應
+       資料時（湖泊不是 statusKey==watch，或 build_all 沒加 --demo-dem
+       執行 assess 步驟）才退回固定半徑的 circle 頂著。
+       polygon 來源若是 method === "synthetic_demo_dem"，代表地形是
+       合成示範資料、不是真實 DEM——這件事必須透過
+       area.inundationMethod / area.inundationDisclaimer 傳到前端顯示
+       出來（見 app.js renderEvidenceCard），不能被當成真的地形分析結果。
+     · info.forecast（有 window.LAKE_FORECAST 資料時才會有）是額外附加
+       的溢流時間預估（pipeline.attribution.forecast，水量平衡、區間
+       輸出），跟 severity/urgency/certainty 是分開的兩件事、互不覆寫：
+       severity/urgency/certainty 一律只看 risk.js（邏輯迴歸），
+       forecast 只在查得到公開可信集水面積來源時才有值。兩者角色不同，
+       別把 forecast 的「有沒有可能溢流」跟 severity 的「風險高不高」
+       混為一談——這是本專案「CAP 的風險依據」這個決定的具體實作，
+       詳見頂層 README。
    ════════════════════════════════════════ */
 
 'use strict';
@@ -180,9 +193,47 @@ const CAP = (() => {
     return '目前風險判定為低，維持例行監測即可，暴雨期間仍建議留意當地雨量與官方公告。';
   }
 
+  // ── 淹沒範圍 area（優先用 assess 模組算出的多邊形，沒有才退回 circle）──
+
+  /* CAP 1.2 的 <polygon> 格式是「lat,lon 空白分隔的點序列，首尾點需相同
+     以閉合」；inundation.polygon 存的是 [lon,lat] 對（跟 GeoJSON 慣例一致），
+     這裡才轉成 CAP 要的 "lat,lon" 順序與字串格式。 */
+  function polygonToCapString(points) {
+    if (!points || points.length < 3) return null;
+    const ring = points.slice();
+    const [firstLon, firstLat] = ring[0];
+    const [lastLon, lastLat] = ring[ring.length - 1];
+    if (firstLon !== lastLon || firstLat !== lastLat) ring.push(ring[0]);
+    return ring.map(([lon, lat]) => `${lat},${lon}`).join(' ');
+  }
+
+  function areaFor(lake, inundation) {
+    const areaDesc = `${lake.county}${lake.town}${lake.village}`;
+    if (inundation && inundation.polygon && inundation.polygon.length >= 3) {
+      return {
+        areaDesc,
+        circle: null,
+        polygon: polygonToCapString(inundation.polygon),
+        polygonPoints: inundation.polygon,          // 供前端地圖直接畫圖用，不用重新解析 CAP 字串
+        inundationMethod: inundation.method || null, // "real_dem" | "synthetic_demo_dem"
+        inundationDisclaimer: inundation.disclaimer || null,
+      };
+    }
+    return {
+      areaDesc,
+      circle: (lake.lat != null && lake.lon != null)
+        ? `${lake.lat},${lake.lon} ${DEFAULT_CIRCLE_RADIUS_KM}`
+        : null,
+      polygon: null,
+      polygonPoints: null,
+      inundationMethod: null,
+      inundationDisclaimer: null,
+    };
+  }
+
   // ── 組裝 CAP 物件（供 UI 與 XML 共用）──────────
 
-  function build(lake, risk, meta, opts = {}) {
+  function build(lake, risk, meta, inundation, forecastData, opts = {}) {
     const severity = severityFromRisk(risk, lake);
     const urgency = urgencyFromRisk(risk, lake);
     const certainty = certaintyFromModel(meta);
@@ -209,18 +260,15 @@ const CAP = (() => {
         description: description(lake, risk, meta),
         instruction: instructionFor(lake, risk, severity, urgency),
         effective, expires,
-        area: {
-          areaDesc: `${lake.county}${lake.town}${lake.village}`,
-          circle: (lake.lat != null && lake.lon != null)
-            ? `${lake.lat},${lake.lon} ${DEFAULT_CIRCLE_RADIUS_KM}`
-            : null,
-        },
-        parameters: buildParameters(lake, risk, meta, severity, urgency, certainty),
+        area: areaFor(lake, inundation),
+        // 附加資訊，不影響 severity/urgency/certainty 的判斷：見上方檔頭說明。
+        forecast: forecastData || null,
+        parameters: buildParameters(lake, risk, meta, severity, urgency, certainty, inundation, forecastData),
       },
     };
   }
 
-  function buildParameters(lake, risk, meta, severity, urgency, certainty) {
+  function buildParameters(lake, risk, meta, severity, urgency, certainty, inundation, forecastData) {
     const params = [
       { valueName: 'severity_basis', value: severity.basis },
       { valueName: 'urgency_basis', value: urgency.basis },
@@ -230,6 +278,19 @@ const CAP = (() => {
       params.push({ valueName: 'risk_prob', value: String(risk.risk_prob) });
       params.push({ valueName: 'risk_snapshot_date', value: risk.date });
       params.push({ valueName: 'model', value: meta ? meta.model : '' });
+    }
+    if (inundation && inundation.polygon && inundation.polygon.length >= 3) {
+      params.push({ valueName: 'inundation_method', value: inundation.method || '' });
+      params.push({ valueName: 'inundation_area_ha', value: String(inundation.areaHa) });
+      if (inundation.disclaimer) {
+        params.push({ valueName: 'inundation_disclaimer', value: inundation.disclaimer });
+      }
+    }
+    if (forecastData) {
+      params.push({ valueName: 'forecast_catchment_km2', value: String(forecastData.catchmentKm2) });
+      params.push({ valueName: 'forecast_catchment_source', value: forecastData.catchmentSource });
+      if (forecastData.median) params.push({ valueName: 'forecast_median', value: forecastData.median });
+      params.push({ valueName: 'forecast_disclaimer', value: forecastData.disclaimer });
     }
     return params;
   }
@@ -249,7 +310,8 @@ const CAP = (() => {
 
     const areaLines = [
       `    <areaDesc>${esc(info.area.areaDesc)}</areaDesc>`,
-      info.area.circle ? `    <circle>${esc(info.area.circle)}</circle>` : '',
+      info.area.polygon ? `    <polygon>${esc(info.area.polygon)}</polygon>` : '',
+      (!info.area.polygon && info.area.circle) ? `    <circle>${esc(info.area.circle)}</circle>` : '',
     ].filter(Boolean).join('\n');
 
     return `<?xml version="1.0" encoding="UTF-8"?>

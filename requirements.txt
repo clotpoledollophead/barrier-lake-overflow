@@ -18,19 +18,26 @@ PyYAML>=6.0           # attribution 句型庫
 pytest>=8.0
 
 # ── 資料處理 ───────────────────────────────────────────
-requests>=2.31        # CWA 即時雨量（pipeline.ingest.cwa / risk_live），已接
+requests>=2.31        # CWA 即時雨量（pipeline.ingest.cwa / risk_live）、CDSE 影像調度（pipeline.trigger.dispatch），已接
+apscheduler>=3.10     # 觸發層常駐輪詢（pipeline.trigger.service --poll）；沒裝時自動退回陽春 while 迴圈
 # pandas>=2.2         # 雨量與地震時序整理（CDSE/SAR 階段再解開）
 
-# ── 空間分析（開始做 DEM 量化時解開）──────────────────
-# numpy>=1.26
-# rasterio>=1.3       # DEM 與影像讀寫
-# shapely>=2.0        # 幾何運算
-# geopandas>=0.14     # 向量圖資（河川、集水區、人口格網）
-# richdem>=0.3        # 填洼、集水區劃分、坡度
+# ── 空間分析（pipeline.preprocess / pipeline.detect / pipeline.assess 用）──
+numpy>=1.26
+scipy>=1.11          # ndimage：型態學運算、中值濾波、BFS 輔助
+rasterio>=1.3        # DEM 與影像讀寫
+scikit-image>=0.22   # Otsu 門檻、connected components
+# shapely>=2.0        # 向量幾何（assess.exposure 的向量版道路交集才需要，解開再用）
+# geopandas>=0.14     # 向量圖資（河川、集水區、人口格網；同上）
+#
+# 沒有用 richdem：填洼/水位-容積曲線改用 pipeline.assess.hypsometry 內建的
+# 純 Python priority-flood 實作（heapq），避免 richdem 的編譯依賴問題
+# （pybind11/C++ 編譯在部分環境會失敗）。
 
-# ── 影像處理（開始處理 SAR 時解開）────────────────────
-# esa-snappy          # SNAP 的 Python 介面，需先裝 SNAP 本體
-# scikit-image>=0.22  # Otsu 門檻、形態學運算
+# ── 影像處理（開始接 SNAP 時再解開）────────────────────
+# esa-snappy          # SNAP 的 Python 介面，需先裝 SNAP 本體；
+#                      # pipeline.preprocess.sar 目前用不依賴 snappy 的簡化
+#                      # 校正/去斑/重投影實作，snappy 可用時可整段替換
 #
 # 注意：SNAP 與 GDAL 建議用 conda 裝，pip 版本相依常出問題：
 #     conda install -c conda-forge esa_snappy gdal

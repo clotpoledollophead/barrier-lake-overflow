@@ -14,10 +14,30 @@ const LAKES = (window.BARRIER_LAKES || []).slice();
 const RISK = window.LAKE_RISK || {};
 const RISK_META = window.RISK_MODEL_META || null;
 
+/* 淹沒範圍評估（見 pipeline/assess/run.py）：以湖泊 id 比對，只有
+   statusKey === 'watch' 且 build_all 有跑 assess 步驟（--demo-dem 或
+   真實 DEM）才有資料；沒有資料時 cap.js 會自動退回 circle，這裡不用
+   特別處理「沒有」的情況。 */
+const INUNDATION = window.LAKE_INUNDATION || {};
+
+/* 溢流預報（見 pipeline/attribution/forecast_run.py）：跟 RISK 是分開的
+   兩件事——RISK 決定 CAP severity/urgency（這座湖危不危險），
+   FORECAST 只在查得到公開可信集水面積來源時才有值（目前僅花蓮馬太鞍溪），
+   估算「已經被判定該關注的湖，大概還有多久可能溢流」，不影響 severity。 */
+const FORECAST = window.LAKE_FORECAST || {};
+
+/* 觸發任務（見 pipeline/trigger/service.py）：架構文件 §04 觸發層產生的
+   監測任務清單，跟湖泊清冊是不同層次的資料——一個觸發任務不一定對應
+   到某座已知湖泊（震央/雨量站座標可能落在清冊沒收錄的地方），這裡只
+   單純陳列，不嘗試把每個任務都硬綁到一個 lake.id 上。 */
+const TRIGGER_TASKS = window.TRIGGER_TASKS || [];
+
 LAKES.forEach(lake => {
   lake.risk = RISK[(lake.name || '').trim()] || null;
+  lake.inundation = INUNDATION[lake.id] || null;
+  lake.forecast = FORECAST[lake.id] || null;
   lake.cap = (typeof CAP !== 'undefined')
-    ? CAP.build(lake, lake.risk, RISK_META)
+    ? CAP.build(lake, lake.risk, RISK_META, lake.inundation, lake.forecast)
     : null;
 });
 
@@ -38,7 +58,8 @@ const state = {
   risk: 'all',       // all / high / low / none
   county: 'all',
   hasCap: false,     // 只顯示有 CAP 草稿（= 有風險評估）的湖泊
-  keyword: ''
+  keyword: '',
+  selectedTrigger: null,   // 目前展開的觸發任務 taskId，null 代表沒有展開任何一個
 };
 
 /* 供搜尋/篩選使用的風險分類，跟 riskBadgeInfo() 用同一套邏輯，
@@ -93,14 +114,29 @@ function initMap3D() {
     return;
   }
 
-  Map3D.init(canvas, labels, resetBtn, {
-    onSelect: id => select(id),
-    onHoverStart: (id, coords) => { setPreview(id); showHoverCard(id, coords); },
-    onHoverMove: (id, coords) => positionHoverCard(coords),
-    onHoverEnd: id => { clearPreview(id); hideHoverCard(); },
-  });
-  Map3D.setLakes(LAKES);
-  bindFullscreenToggle(wrap);
+  try {
+    Map3D.init(canvas, labels, resetBtn, {
+      onSelect: id => select(id),
+      onHoverStart: (id, coords) => { setPreview(id); showHoverCard(id, coords); },
+      onHoverMove: (id, coords) => positionHoverCard(coords),
+      onHoverEnd: id => { clearPreview(id); hideHoverCard(); },
+    });
+    Map3D.setLakes(LAKES);
+    Map3D.setTriggerAreas(TRIGGER_TASKS.map(t => ({
+      taskId: t.taskId, centerLat: t.aoi.centerLat, centerLon: t.aoi.centerLon, radiusKm: t.aoi.radiusKm,
+    })));
+    bindFullscreenToggle(wrap);
+  } catch (err) {
+    // WebGL 初始化失敗（部分環境/瀏覽器設定會這樣，不是本專案能控制的事）
+    // 不該讓整個 init() 一起掛掉——3D 地圖以外的清單、統計、觸發面板等
+    // 都不依賴 Map3D，沒理由因為地圖畫不出來就整頁空白。這裡刻意接住，
+    // 讓 init() 的呼叫端能繼續往下跑其餘的 render 函式。
+    console.error('Map3D 初始化失敗，地圖區塊改用文字提示：', err);
+    if (wrap) {
+      wrap.innerHTML = '<p class="map3d-fallback">立體地形無法顯示（WebGL 初始化失敗）——' +
+        '不影響下方清單與判定依據，仍可正常瀏覽。</p>';
+    }
+  }
 }
 
 /* 全螢幕：用瀏覽器原生 Fullscreen API，讓地圖區塊(.map3d-wrap)整個佔滿螢幕。
@@ -165,8 +201,13 @@ function syncMarkers() {
   const highRiskIds = new Set(LAKES.filter(l => CAP.shouldAlert(l)).map(l => l.id));
 
   const selectedLake = LAKES.find(l => l.id === state.selected);
-  const capArea = (selectedLake && selectedLake.risk && selectedLake.cap && selectedLake.cap.info.area.circle)
-    ? { lakeId: selectedLake.id, radiusKm: parseFloat(selectedLake.cap.info.area.circle.split(' ')[1]) }
+  const area = (selectedLake && selectedLake.risk && selectedLake.cap) ? selectedLake.cap.info.area : null;
+  const capArea = area && (area.polygonPoints || area.circle)
+    ? {
+        lakeId: selectedLake.id,
+        radiusKm: area.circle ? parseFloat(area.circle.split(' ')[1]) : null,
+        polygon: area.polygonPoints || null,
+      }
     : null;
 
   if (typeof Map3D !== 'undefined') {
@@ -174,6 +215,71 @@ function syncMarkers() {
   }
 
   $('[data-bind="mapCount"]').textContent = `顯示 ${visibleIds.size} / ${LAKES.length} 處`;
+}
+
+/* ── 觸發事件面板（架構文件 §04）────────────
+   跟湖泊清單是分開的一塊 UI：不放進 renderDetail()（那是「選了某座湖」
+   才會動的東西），而是獨立於湖泊選取狀態、頁面載入時就渲染一次。
+   TRIGGER_TASKS 通常是空陣列（觸發層是常駐服務，不是每次都有新任務），
+   這時候面板直接隱藏，不留一個空殼區塊。 */
+const TRIGGER_TYPE_TEXT = { quake: '地震觸發', rain: '雨量觸發', compound: '複合觸發（地震後遇豪雨）' };
+
+function renderTriggerPanel() {
+  const panel = $('#triggerPanel');
+  const list = $('#triggerList');
+  if (!panel || !list) return;
+
+  if (!TRIGGER_TASKS.length) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+
+  const summary = $('[data-bind="triggerSummary"]');
+  if (summary) {
+    const nHigh = TRIGGER_TASKS.filter(t => t.priority === 'high').length;
+    summary.textContent = `${TRIGGER_TASKS.length} 個監測任務（${nHigh} 個高優先）`;
+  }
+
+  list.innerHTML = TRIGGER_TASKS.map(t => {
+    const isActive = t.taskId === state.selectedTrigger;
+    const nearby = (t.nearbyKnownLakes || []).slice(0, 2).map(lk => lk.name).join('、')
+      || '無已知湖泊在範圍內';
+    const typeText = TRIGGER_TYPE_TEXT[t.triggerType] || t.triggerType;
+    const item = `
+      <div class="trigger-item${isActive ? ' is-active' : ''}" data-task-id="${t.taskId}">
+        <span class="ti-type">${typeText}</span>
+        <span class="${t.priority === 'high' ? 'ti-priority-high' : ''}">${t.priority === 'high' ? '高優先' : '一般'}</span>
+        <span>${t.aoi.label || ''}（${t.aoi.radiusKm} km）</span>
+        <span class="ti-nearby">附近：${nearby}</span>
+      </div>`;
+    if (!isActive) return item;
+
+    const reasons = (t.basis && t.basis.reasons) || [];
+    const dispatch = t.dispatch;
+    return item + `
+      <div class="trigger-detail">
+        <div class="td-line">建立時間：${new Date(t.createdAt).toLocaleString('zh-TW', { hour12: false })}</div>
+        ${reasons.length ? `<div class="td-line td-mono">${reasons.join('｜')}</div>` : ''}
+        ${dispatch ? `
+        <div class="td-line td-mono">
+          影像調度：${dispatch.latestScene ? '已取得事件前基準景' : '無事件前基準景資料'}｜
+          ${dispatch.nextScene && dispatch.nextScene.estimated
+            ? `下次過境為經驗值估計（${dispatch.nextScene.basis || ''}）`
+            : (dispatch.nextScene ? '已取得下次過境排程' : '無下次過境資料')}
+        </div>` : `
+        <div class="td-line td-mono">影像調度：未執行（--offline 或無 CDSE 憑證）</div>`}
+      </div>`;
+  }).join('');
+
+  $$('.trigger-item', list).forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.taskId;
+      state.selectedTrigger = (state.selectedTrigger === id) ? null : id;
+      renderTriggerPanel();
+      if (typeof Map3D !== 'undefined') Map3D.setActiveTriggerTask(state.selectedTrigger);
+    });
+  });
 }
 
 
@@ -364,6 +470,7 @@ function renderDetail() {
   renderConclusion(lake);
   renderActionCard(lake);
   renderEvidenceCard(lake);
+  renderForecastCard(lake);
   renderBasicFacts(lake);
   renderCapDraft(lake);
 }
@@ -498,6 +605,14 @@ function renderEvidenceCard(lake) {
   const drivers = CAP.topDrivers(lake.risk, RISK_META);
   const rules = lake.rulesFired || [];
 
+  const inundationNote = info.area.polygon
+    ? `
+    <div class="limitation-note" style="margin-top:8px">
+      淹沒範圍：${info.area.inundationMethod === 'synthetic_demo_dem' ? '合成示範地形（非真實 DEM）' : '真實 DEM'}
+      ${info.area.inundationDisclaimer ? `<br>${info.area.inundationDisclaimer}` : ''}
+    </div>`
+    : '';
+
   box.innerHTML = `
     <div class="et">判定依據</div>
     <dl class="evidence-row">
@@ -512,12 +627,56 @@ function renderEvidenceCard(lake) {
       <span class="label" style="display:block;margin-bottom:6px">主要驅動因子</span>
       <ul class="evidence-list">${drivers.map(d => `<li>${d}</li>`).join('')}</ul>` : ''}
     <div class="limitation-note">模型限制：${info.certainty.basis}</div>
+    ${inundationNote}
     ${lake.narrative ? `
       <details class="narr-rules" style="margin-top:12px">
         <summary>成因敘述與命中規則${rules.length ? `（${rules.length} 條）` : ''}</summary>
         <p class="narr-text" style="margin:8px 0 0">${lake.narrative}</p>
         ${rules.length ? `<ul>${rules.map(r => `<li>${r}</li>`).join('')}</ul>` : ''}
       </details>` : ''}`;
+}
+
+/* 溢流預報卡：跟上面的「判定依據」（risk.js／邏輯迴歸）刻意分開一張卡，
+   不放進同一個 box——這兩個模型角色不同（見 cap.js 檔頭「CAP 的風險
+   依據」說明），分開呈現才不會讓人誤以為預報時間是 severity 的依據，
+   或反過來以為風險分級用了水量平衡模型。沒有 lake.forecast 時（清冊
+   裡幾乎所有湖泊目前都是如此——只有查得到公開可信集水面積來源才會有）
+   顯示原因，不是留白讓人誤會沒做。 */
+function renderForecastCard(lake) {
+  const box = $('#forecastCard');
+  if (!box) return;
+
+  if (lake.statusKey !== 'watch') {
+    box.innerHTML = '';
+    return;
+  }
+
+  if (!lake.forecast) {
+    box.innerHTML = `
+      <div class="et">溢流預報（水量平衡，額外參考）</div>
+      <p class="narr-empty">此湖尚無查證過的集水面積來源，無法估算溢流時間——
+      不是還沒做，是刻意不用未查證的數字充數（見 pipeline/attribution/forecast_run.py）。</p>`;
+    return;
+  }
+
+  const fc = lake.forecast;
+  const fmtTime = t => t ? new Date(t).toLocaleString('zh-TW', { hour12: false }) : null;
+
+  box.innerHTML = `
+    <div class="et">溢流預報（水量平衡，額外參考，不是 severity 的依據）</div>
+    <dl class="evidence-row">
+      <dt>集水面積</dt><dd>${fc.catchmentKm2} km²（查證過的數字）</dd>
+      <dt>距壩頂</dt><dd>${fc.gapM} m</dd>
+      <dt>剩餘容量</dt><dd>${fc.remainingWanM3.toLocaleString('zh-TW')} 萬 m³</dd>
+      ${fc.anyOverflow ? `
+      <dt>預估溢流區間</dt><dd>${fmtTime(fc.earliest)} ～ ${fmtTime(fc.latest)}（中位 ${fmtTime(fc.median)}）</dd>` : ''}
+    </dl>
+    ${fc.narrative && fc.narrative.length ? `
+      <ul class="evidence-list">${fc.narrative.map(s => `<li>${s}</li>`).join('')}</ul>` : ''}
+    <div class="limitation-note">${fc.disclaimer}</div>
+    <div class="limitation-note" style="margin-top:6px">
+      來源：${fc.catchmentSource}
+    </div>`;
 }
 
 /* 基本資料：內容與原本完全相同，只是搬進 <details> 收合區塊
@@ -824,12 +983,13 @@ function refresh() {
   }
 }
 
-/* 地圖圖層控制：四個勾選框直接對應 Map3D.setLayers() 的四個開關 */
+/* 地圖圖層控制：勾選框直接對應 Map3D.setLayers() 的開關 */
 function bindLayerControls() {
   const map = {
     layerPoints: 'points',
     layerHighRisk: 'highRisk',
     layerCapArea: 'capArea',
+    layerTriggerAreas: 'triggerAreas',
     layerLabels: 'labels',
   };
   Object.entries(map).forEach(([elId, layerKey]) => {
@@ -912,6 +1072,7 @@ function init() {
   initMap3D();
   renderStats();
   renderCapBar();
+  renderTriggerPanel();
   bindFilters();
   bindLayerControls();
   populateCountyOptions();

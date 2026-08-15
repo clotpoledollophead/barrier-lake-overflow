@@ -96,6 +96,7 @@
             <label><input type="checkbox" id="layerPoints" checked>堰塞湖點位</label>
             <label><input type="checkbox" id="layerHighRisk" checked>高風險標記</label>
             <label><input type="checkbox" id="layerCapArea" checked>CAP 示警範圍</label>
+            <label><input type="checkbox" id="layerTriggerAreas" checked>觸發範圍</label>
             <label><input type="checkbox" id="layerLabels">點位名稱</label>
           </div>
           <div class="cap-preview-note">暫以壩址周圍 3 km 示意，非正式淹水模擬範圍</div>
@@ -113,6 +114,14 @@
           <span><i class="key k-gone"></i>已消失</span>
           <span class="sep"></span>
           <span class="scale"><i class="key sz-s"></i><i class="key sz-m"></i><i class="key sz-l"></i>蓄水量</span>
+        </div>
+
+        <div class="trigger-panel" id="triggerPanel" hidden>
+          <div class="tp-head">
+            <span class="tp-badge">§04 觸發層</span>
+            <span class="tp-text" data-bind="triggerSummary">—</span>
+          </div>
+          <div class="trigger-list" id="triggerList"></div>
         </div>
       </div>
     </div>
@@ -135,6 +144,8 @@
       <div class="action-card" id="actionCard"></div>
 
       <div class="evidence-card" id="evidenceCard"></div>
+
+      <div class="evidence-card" id="forecastCard"></div>
 
       <details class="basic-facts">
         <summary>基本資料</summary>
@@ -252,6 +263,9 @@
 
 <script src="data/lakes.js"></script>
 <script src="data/risk.js"></script>
+<script src="data/inundation.js"></script>
+<script src="data/forecast.js"></script>
+<script src="data/trigger_tasks.js"></script>
 <script src="data/terrain.js"></script>
 <script src="cap.js"></script>
 <script src="vendor/three.min.js"></script>

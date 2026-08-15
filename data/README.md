@@ -6,6 +6,12 @@ data/
 └── derived/   中繼產物，不進版控（可重新產生）
 ```
 
+`derived/trigger_state.json` 由 `pipeline.trigger.service` 寫入，記住
+「最近一次達門檻地震的時間與震央」，供跨輪次的複合加權判斷用
+（見架構文件 §04「地震後 30 天內遇豪雨 → 門檻下修 20%」）。
+刪掉這個檔案不會壞任何東西，只是複合加權會忘記歷史地震，
+下次執行 `pipeline.trigger.service` 時重新建立即可。
+
 ## raw/
 
 | 檔案 | 來源 | 說明 |
@@ -16,6 +22,7 @@ data/
 | `risk/feature_importance.csv` | 同上（**已停用**） | 決策樹特徵重要性；package 版模型沒有對應的決策樹，目前無人讀取 |
 | `risk/decision_rules.txt` | 同上（**已停用**） | 決策樹規則文字版；同上，目前無人讀取 |
 | `risk/metrics.json` | 同上（**已停用**） | 模型後設資料；`nPositives=12` 等數字已內建於 `pipeline/ingest/risk.py` |
+| `dem/<lakeId>.tif`（不存在） | 尚未取得 | `pipeline.assess.run` 優先讀取的真實 DEM 路徑慣例（單一湖泊裁切好的 GeoTIFF），本專案目前沒有隨附。也接受 `dem/taiwan_dem.tif`（全台 DEM，用湖泊座標裁切）。兩者都不存在時，`build_all --demo-dem` 會退回 `pipeline.assess.synthetic_dem` 的合成地形（demo 用，非真實地形）。
 
 清冊原始座標為 **TWD97 TM2（EPSG:3826）**，不是經緯度，直接畫會落到
 非洲外海。轉換由 `code/pipeline/ingest/inventory.py` 處理。
